@@ -1,0 +1,29 @@
+                            OLS Regression Results                            
+==============================================================================
+Dep. Variable:                  cotas   R-squared:                       0.550
+Model:                            OLS   Adj. R-squared:                  0.549
+Method:                 Least Squares   F-statistic:                     308.8
+Date:                Tue, 06 Apr 2021   Prob (F-statistic):          5.64e-216
+Time:                        09:42:31   Log-Likelihood:                 4646.9
+No. Observations:                1267   AIC:                            -9282.
+Df Residuals:                    1261   BIC:                            -9251.
+Df Model:                           5                                         
+Covariance Type:            nonrobust                                         
+==============================================================================
+                 coef    std err          t      P>|t|      [0.025      0.975]
+------------------------------------------------------------------------------
+const          0.0010      0.000      5.933      0.000       0.001       0.001
+MKT            0.5367      0.016     32.910      0.000       0.505       0.569
+SMB            0.0879      0.033      2.648      0.008       0.023       0.153
+HML           -0.1231      0.028     -4.429      0.000      -0.178      -0.069
+IML            0.0033      0.033      0.100      0.920      -0.062       0.069
+WML            0.0938      0.024      3.875      0.000       0.046       0.141
+==============================================================================
+Omnibus:                       37.997   Durbin-Watson:                   2.151
+Prob(Omnibus):                  0.000   Jarque-Bera (JB):               85.955
+Skew:                          -0.108   Prob(JB):                     2.16e-19
+Kurtosis:                       4.258   Cond. No.                         243.
+==============================================================================
+
+Notes:
+[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.
