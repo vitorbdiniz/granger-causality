@@ -155,7 +155,7 @@ def preprocess_dates(fundo, fatores):
     for i in range(fundo.shape[0]):
         if fundo["data"].iloc[i] in fatores.index:
             cotas += [fundo["variacao"].iloc[i]]
-            MKT    += [fatores.loc[fundo["data"].iloc[i]]["MKT"]]
+            MKT    += [fatores.loc[fundo["data"].iloc[i]]["Market"]]
             SMB    += [fatores.loc[fundo["data"].iloc[i]]["SMB"]]
             HML      += [fatores.loc[fundo["data"].iloc[i]]["HML"]]
             IML   += [fatores.loc[fundo["data"].iloc[i]]["IML"]]
