@@ -623,7 +623,5 @@ def preprocess_serie(serie):
     return result
 
 def preprocess_series(series_list):
-    result = list()
-    for serie in series_list:
-        result.append( preprocess_serie(serie) )
+    result = [preprocess_serie(serie) for serie in series_list]
     return join_series(result)
