@@ -1,5 +1,6 @@
 from os.path import realpath
 import pandas as pd
+import numpy as np
 import datetime as dt
 import pandas_datareader as web
 
@@ -369,15 +370,24 @@ def allReturns(prices = dict()):
     return pd.DataFrame({ticker:pd.DataFrame(getReturns(prices[ticker]), index=list(prices[ticker].index)) for ticker in prices.keys()}, index=date_range(dt.datetime(2010,1,1), dt.datetime.today()))
 
 
-def cumulative_return(retornos):
+def cumulative_return(retornos, return_type = pd.Series):
+    '''
+        Retorna uma lista ou pandas.Series de retornos acumulados
+        retornos: {list, pandas.Series}
+        return_type: {pandas.Series, list}
+    '''
     capital = 1
     acumulado = []
     for r in retornos:
-        if r == None or pd.isna(r):
-            acumulado += [capital-1]
-        else:
+        if not (r == None or pd.isna(r)):
             capital = capital*(1+r)
-            acumulado += [capital-1]
+        acumulado += [capital-1]
+        
+    if return_type == pd.Series:
+        if type(retornos) == pd.Series:
+            acumulado = pd.Series(acumulado, index=retornos.index)
+        else:
+            acumulado = pd.Series(acumulado, index=range(len(retornos)))
     return acumulado
 
 def avg_return(retornos):
@@ -399,6 +409,18 @@ def mean_annual_return(array):
     OUTROS CÁLCULOS
 
 """
+
+
+def is_none(val):
+    if is_iterable:
+        return False
+    return val == None
+
+def is_iterable(elem):
+    try:
+        return iter(elem)
+    except:
+        return False
 
 def getSelic(start = dt.date.today(), end = dt.date.today(), verbose = 0, persist = True, form="DataFrame"):
     pad.verbose("Buscando série histórica da Selic", level=5, verbose=verbose)
@@ -534,3 +556,74 @@ def none_to_zero(array):
     return [x if pd.notna(x) else 0 for x in array]
 
     
+"""
+
+    STATISTICS
+
+"""
+
+def outlier_treatment_df(data, quantile=0.25, mult=1.5):
+    outliers = set()
+    for fac in data.columns.tolist():
+        outliers = outliers.union( outlier_treatment(data[fac], quantile, mult, out_index=True) )
+    result = data.drop(outliers, axis="rows")
+    return result
+
+
+def outlier_treatment(serie, quantile=0.25, mult=1.5, out_index=False):
+    '''
+        out_index: Boolean -> se True, retona os índices com outliers 
+    '''
+    outliers = set()
+
+    q75 = np.quantile([ float(x) for x in serie.values], 1-quantile)
+    q25 = np.quantile([ float(x) for x in serie.values], quantile)
+    iqr = q75 - q25
+    upper, lower = q75 + iqr*mult , q25 - iqr*mult
+    for i in serie.index:
+        num = serie.loc[i].iloc[-1] if type(serie.loc[i]) == pd.Series else serie.loc[i]
+        if num > upper or num < lower:
+            outliers.add(i)
+    if out_index:
+        result = outliers
+    else:
+        result = serie.drop(outliers, axis="rows")
+    return result
+
+def merge_lists(lists):
+    L = list( set([e for list1 in lists for e in list1]) )
+    L.sort()
+    return L
+
+def join_series(series_list, dropna = True):
+    result = pd.DataFrame({i : series_list[i] for i in range(len(series_list))}, merge_lists( [s.index for s in series_list] )  )
+    if dropna:
+        result.dropna(inplace=True)
+    return result
+
+def rescale_df(df):
+    return pd.DataFrame({ col : rescale(df[col]) for col in df.columns})
+
+def rescale(serie):
+    if type(serie) == pd.Series:
+        index = serie.index
+        data = serie.values
+    else:
+        data = np.array(serie)
+        index = range(len(serie))
+    minimum = data.min(axis=0)
+    maximum = data.max(axis=0)
+    result = (data - minimum ) / (maximum - minimum)
+    return pd.Series(result, index=index)
+
+
+def preprocess_serie(serie):
+    result = rescale(serie)
+    result = outlier_treatment(result)
+    return result
+
+def preprocess_series(series_list):
+    result = list()
+    for serie in series_list:
+        result.append( preprocess_serie(serie) )
+    return join_series(result)
