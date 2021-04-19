@@ -7,7 +7,11 @@ from factors import nefin_risk_free, nefin_single_factor
 
 import util,padding as pad
 
-def extract_characteristics(alfas, fis, verbose=0):
+def extract_characteristics(alfas, fis, janela = 'all_period', dropna="all", verbose=0):
+    """
+        
+        janela: {'all', 'all_period', '1month', '12months', '24months', '36months'}
+    """
     characteristics = { 
         FI: pd.DataFrame({
             'sharpe'             : sharpe_index(fis[FI]['variacao'].dropna(), portfolio=FI, verbose=verbose),
@@ -16,22 +20,26 @@ def extract_characteristics(alfas, fis, verbose=0):
             'information-ratio'  : information_ratio(fis[FI]['variacao'].dropna(), portfolio=FI,verbose=verbose),
             'standard_deviation' : volatility(fis[FI]['variacao'].dropna(), portfolio=FI,method="std", verbose=verbose),
             'downside_deviation' : volatility(fis[FI]['variacao'].dropna(), portfolio=FI,method="dsd", verbose=verbose)
-            }, index = util.date_range(dt.date(2000,1,1), dt.date.today()) ).dropna(how="all")
+            }, index = util.date_range(dt.date(2000,1,1), dt.date.today()) ).dropna(how=dropna)
         for FI in fis.keys() 
     }
     return characteristics
 
-def capm_risk_premium(returns,verbose=0):
+def capm_risk_premium(returns,cumulative = False, verbose=0):
     pad.verbose("Calculando Prêmio pelo risco de Mercado", level=2, verbose=verbose)
-    return (returns - nefin_risk_free()).dropna()
+
+    mkt = (returns - nefin_risk_free()).dropna()
+    if cumulative:
+        mkt = util.cumulative_return(mkt, return_type = pd.Series)
+    return mkt
 
 def sharpe_index(returns, portfolio=None,verbose=0):
     pad.verbose(f"Calculando Índice de Sharpe de {portfolio}", level=2, verbose=verbose)
-    return ( capm_risk_premium(returns) / volatility(returns) ).dropna()
+    return ( capm_risk_premium(returns, cumulative = True, verbose=verbose) / volatility(returns) ).dropna()
 
 def treynor_index(returns, betas, portfolio=None,verbose=0):
     pad.verbose(f"Calculando Índice de Treynor de {portfolio}", level=2, verbose=verbose)
-    return ( capm_risk_premium(returns) / betas ).dropna()
+    return ( capm_risk_premium(returns, cumulative = True, verbose=verbose) / betas ).dropna()
 
 def get_lifetime(returns, portfolio=None, verbose=0):
     pad.verbose(f"Calculando Tempo de vida de {portfolio}", level=2, verbose=verbose)
@@ -71,7 +79,8 @@ def information_ratio(returns, portfolio=None, verbose=0):
     pad.verbose(f"Calculando Information Ratio de de {portfolio}", level=2, verbose=verbose)
 
     MKT = nefin_single_factor(factor="Market")
-    premium = (returns - MKT).dropna()
+
+    premium = util.cumulative_return((returns - MKT).dropna(), return_type=pd.Series)
     fund_tracking_error = volatility( (returns-MKT).dropna() )
 
     IR = premium / fund_tracking_error
