@@ -34,15 +34,15 @@ def capm_risk_premium(returns,cumulative = False, verbose=0):
     return mkt
 
 def sharpe_index(returns, portfolio=None,verbose=0):
-    pad.verbose(f"Calculando Índice de Sharpe de {portfolio}", level=2, verbose=verbose)
+    pad.verbose(f"{portfolio}. Calculando Índice de Sharpe de ", level=2, verbose=verbose)
     return ( capm_risk_premium(returns, cumulative = True, verbose=verbose) / volatility(returns) ).dropna()
 
 def treynor_index(returns, betas, portfolio=None,verbose=0):
-    pad.verbose(f"Calculando Índice de Treynor de {portfolio}", level=2, verbose=verbose)
+    pad.verbose(f"{portfolio}. Calculando Índice de Treynor", level=2, verbose=verbose)
     return ( capm_risk_premium(returns, cumulative = True, verbose=verbose) / betas ).dropna()
 
 def get_lifetime(returns, portfolio=None, verbose=0):
-    pad.verbose(f"Calculando Tempo de vida de {portfolio}", level=2, verbose=verbose)
+    pad.verbose(f"{portfolio}. Calculando Tempo de vida", level=2, verbose=verbose)
     return pd.Series( range(1, returns.shape[0]+1) , index = returns.index)
 
 def leverage():
@@ -63,7 +63,7 @@ def volatility(returns, method="std", portfolio=None, verbose=0):
         method: {'std', 'dsd'}
         returns: float
     """
-    pad.verbose(f"Calculando Volatilidade de {portfolio}: método {method}", level=2, verbose=verbose)
+    pad.verbose(f"{portfolio}. Calculando Volatilidade: método {method}", level=2, verbose=verbose)
     if len(returns) < 2:
         return None
 
@@ -76,7 +76,7 @@ def volatility(returns, method="std", portfolio=None, verbose=0):
 
 
 def information_ratio(returns, portfolio=None, verbose=0):
-    pad.verbose(f"Calculando Information Ratio de de {portfolio}", level=2, verbose=verbose)
+    pad.verbose(f"{portfolio}. Calculando Information Ratio", level=2, verbose=verbose)
 
     MKT = nefin_single_factor(factor="Market")
 

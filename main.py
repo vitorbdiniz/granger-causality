@@ -4,6 +4,7 @@ from factors import get_fatores
 from preprocess_fias import preprocess_fis
 from alpha import jensens_alpha
 from characteristics import extract_characteristics
+from granger import granger_tests
 
 import util, padding as pad
 
@@ -19,14 +20,15 @@ def main():
         alfas = {FI : util.df_datetimeindex(pd.read_csv(f'./data/alphas/{FI}.csv', index_col=0)) for FI in fis.keys()}
     else:
         alfas = jensens_alpha(fatores, fis, verbose=verbose)
-
-    pad.persist_collection(alfas, path='./data/alphas/', extension=".csv", to_persist=persist, _verbose=verbose, verbose_level=0, verbose_str="Persistindo Alfas")
+        pad.persist_collection(alfas, path='./data/alphas/', extension=".csv", to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo Alfas")
 
     #caracteristicas
-    funds_characts = extract_characteristics(alfas, fis)
-    pad.persist(funds_characts, path='./data/caracteristicas/characteristics.csv', to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo características")
-    print(funds_characts)
+    funds_characts = extract_characteristics(alfas, fis, dropna="any",verbose=verbose)
+    pad.persist_collection(funds_characts, path='./data/caracteristicas/', to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo características") 
+    
     #granger
+    gtests = granger_tests(funds_characts, alfas, statistical_test='all',verbose=verbose)
+    pad.persist_collection(gtests, path='./data/granger_tests/', to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo testes de Granger") 
 
 
 
