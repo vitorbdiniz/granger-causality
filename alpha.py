@@ -34,7 +34,7 @@ class SMWrapper(BaseEstimator, RegressorMixin):
 
 
 
-def jensens_alpha(risk_factors, portfolios_returns, verbose=0):
+def jensens_alpha(risk_factors, portfolios_returns, janela=None,verbose=0):
     """
         Calcula o Alfa de Jensen para os fundos fornecidos, a partir dos fatores previamente calculados
 
@@ -45,17 +45,32 @@ def jensens_alpha(risk_factors, portfolios_returns, verbose=0):
     alphas = dict()
     i=1
     for each_fund in portfolios_returns:
-        df = pd.DataFrame(columns=columns)
         pad.verbose(str(i)+". Calculando alfa do Fundo " + str(portfolios_returns[each_fund]["fundo"].iloc[0]) + " ---- faltam "+str(len(portfolios_returns.keys())-i), level=5, verbose=verbose)        
         data = preprocess_dates(portfolios_returns[each_fund], risk_factors)
-
-        for j in range(20, data.shape[0]):
-            pad.verbose(str(i)+"."+str(j)+". Calculando alfa do Fundo " + str(portfolios_returns[each_fund]["fundo"].iloc[0]) + " para o dia " + str(data.index[j]) + "---- faltam "+str(len(data.index)-j), level=4, verbose=verbose)
-            regression_results = get_factor_exposition(data.iloc[0:j+1], each_fund, verbose=verbose)
-            df.loc[data.index[j]] = regression_results
-            alphas[each_fund] = df
+        if janela:
+            alphas[each_fund] = alpha_window_algorithm(data, portfolios_returns[each_fund], columns, window=janela, fund_name=each_fund, verbose_counter=i, verbose=verbose)
+        else:
+            alphas[each_fund] = alpha_algorithm(data, portfolios_returns[each_fund], columns, fund_name=each_fund, verbose_counter=i, verbose=verbose)
         i+=1
     return alphas
+
+def alpha_algorithm(data, returns, columns, fund_name='', verbose_counter=0, verbose=0):
+    df = pd.DataFrame(columns=columns)
+    for j in range(20, data.shape[0]):
+        pad.verbose(f"{verbose_counter}.{j}. Calculando alfa do Fundo {fund_name} para o dia {data.index[j]} ---- faltam {len(data.index)-j}", level=4, verbose=verbose)
+        df.loc[data.index[j]] = get_factor_exposition(data.iloc[0:j+1], fund_name, verbose=verbose)
+    return df
+
+def alpha_window_algorithm(data, returns, columns, window=12, fund_name='', verbose_counter=0, verbose=0):
+    '''
+        Calcula o alfa de um portfolio específico dentro de uma janela mensal móvel
+    '''
+    window *= 22 #Quantidade média de dias úteis em um por mês em um ano
+    df = pd.DataFrame(columns=columns)
+    for j in range(window, data.shape[0]):
+        pad.verbose(f"{verbose_counter}.{j}. Calculando alfa do Fundo {fund_name} com uma janela móvel de {window/22} meses para o dia {data.index[j]} ---- faltam {len(data.index)-j}", level=4, verbose=verbose)
+        df.loc[data.index[j]] = get_factor_exposition(data.iloc[j-window:j+1], fund_name, verbose=verbose)
+    return df
 
 def get_factor_exposition(df, name="portfolio", persist=True, verbose=0):
     """
