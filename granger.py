@@ -64,10 +64,10 @@ def granger_causality_test(data, maxlag=10, statistical_test='all', scores=True,
 
     result = pd.DataFrame({lag : pd.Series({stat:gTests[lag][0][stat][1] for stat in statistical_tests}) for lag in gTests.keys()}, index = statistical_tests)
     if scores:
-        result = granger_scores(result)
+        result = granger_stats_scores(result)
     return result
 
-def granger_scores(granger_df):
+def granger_stats_scores(granger_df):
     df = granger_df.copy() <= 0.05
     Gscores = []
     for col in df.columns:
@@ -131,3 +131,28 @@ def get_difference(serie):
     list_ = [ e if e != 0 else stdev/100 for e in list_]
 
     return pd.Series(list_, serie.index)
+
+
+
+"""
+
+    GRANGER SCORES
+
+"""
+
+def granger_scores(granger_dic:dict ):
+    """
+        granger_dic: dicionário com DataFrames resultantes de granger_tests
+
+    """
+    result = pd.DataFrame(columns = list(granger_dic.values())[0].columns)
+
+    for granger_df in granger_dic.values():
+        for metric in granger_df.index:
+            if metric in result.index:
+                result.loc[metric] += granger_df.loc[metric]
+            else:
+                result.loc[metric] = granger_df.loc[metric]                
+    result /= len(granger_dic.values())
+    return result
+        
