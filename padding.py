@@ -26,13 +26,13 @@ def betwen_lines(msg):
 
 #Persist configurations
 
-def persist(df, path, to_persist=False, _verbose=0, verbose_level=0, verbose_str=""):
+def persist(df, path, to_persist=True, _verbose=0, verbose_level=1, verbose_str=""):
     if to_persist:
         verbose(verbose_str, level=verbose_level, verbose=_verbose)
         df.to_csv(path)
         verbose("-- OK.", level=verbose_level, verbose=_verbose)
         
-def persist_collection(collection, path, extension=".csv", to_persist=False, _verbose=0, verbose_level=0, verbose_str=""):
+def persist_collection(collection, path, extension=".csv", to_persist=True, _verbose=0, verbose_level=0, verbose_str=""):
     if to_persist:
         verbose(verbose_str, level=verbose_level, verbose=_verbose)
         for c in collection:
