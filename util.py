@@ -412,13 +412,16 @@ def mean_annual_return(array):
 
 
 def is_none(val):
-    if is_iterable:
-        return False
+    if type(val) == pd.Series or type(val) == pd.DataFrame:
+        return not val.any()
     return val == None
+
+
 
 def is_iterable(elem):
     try:
-        return iter(elem)
+        iter(elem)
+        return True
     except:
         return False
 

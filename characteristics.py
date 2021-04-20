@@ -23,7 +23,7 @@ def extract_characteristics(alfas, fis, janela = 'all_period', dropna="all", ver
             'variacao'           : util.cumulative_return(fis[FI]['cota'], return_type = pd.Series),
             'equity'             : fis[FI]['patrimonio_liquido'],
             'captacao_liquida'   : captacao_liquida_acumulada(fis[FI]['captacao'] - fis[FI]['resgate']),
-            'costistas'          : fis[FI]['cotistas']
+            'cotistas'          : fis[FI]['cotistas']
             }, index = util.date_range(dt.date(2000,1,1), dt.date.today()) ).dropna(how=dropna)
         for FI in fis.keys() 
     }
