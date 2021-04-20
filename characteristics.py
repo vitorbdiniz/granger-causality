@@ -19,11 +19,25 @@ def extract_characteristics(alfas, fis, janela = 'all_period', dropna="all", ver
             'lifetime'           : get_lifetime(fis[FI]['variacao'].dropna() , portfolio=FI,verbose=verbose),
             'information-ratio'  : information_ratio(fis[FI]['variacao'].dropna(), portfolio=FI,verbose=verbose),
             'standard_deviation' : volatility(fis[FI]['variacao'].dropna(), portfolio=FI,method="std", verbose=verbose),
-            'downside_deviation' : volatility(fis[FI]['variacao'].dropna(), portfolio=FI,method="dsd", verbose=verbose)
+            'downside_deviation' : volatility(fis[FI]['variacao'].dropna(), portfolio=FI,method="dsd", verbose=verbose),
+            'variacao'           : util.cumulative_return(fis[FI]['cota'], return_type = pd.Series),
+            'equity'             : fis[FI]['patrimonio_liquido'],
+            'captacao_liquida'   : captacao_liquida_acumulada(fis[FI]['captacao'] - fis[FI]['resgate']),
+            'costistas'          : fis[FI]['cotistas']
             }, index = util.date_range(dt.date(2000,1,1), dt.date.today()) ).dropna(how=dropna)
         for FI in fis.keys() 
     }
     return characteristics
+
+
+def captacao_liquida_acumulada(captacao_liquida):
+    s = 0
+    acc = []
+    for cap in captacao_liquida.values:
+        s += cap if pd.notna(cap) else 0
+        acc += [s]
+    return pd.Series(acc, captacao_liquida.index)
+
 
 def capm_risk_premium(returns,cumulative = False, verbose=0):
     pad.verbose("Calculando Prêmio pelo risco de Mercado", level=2, verbose=verbose)
