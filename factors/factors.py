@@ -1,7 +1,8 @@
 import pandas as pd
 import numpy as np
 import datetime as dt
-import util, padding as pad
+
+from util import util, padding as pad
 
 def get_fatores(source, verbose=0):
     pad.verbose("- Calculando Fatores de Risco -", level=2, verbose=verbose)

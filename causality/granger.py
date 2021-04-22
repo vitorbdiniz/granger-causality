@@ -3,7 +3,7 @@ import numpy as np
 from statsmodels.tsa.stattools import grangercausalitytests, adfuller
 from sklearn.preprocessing import MinMaxScaler
 
-import util, padding as pad
+from util import util, padding as pad
 
 
 """

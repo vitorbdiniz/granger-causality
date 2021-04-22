@@ -9,9 +9,9 @@ from sklearn.model_selection import cross_validate
 from sklearn.base import BaseEstimator, RegressorMixin
 
 
-import preprocess_fias as FI
-import padding as pad
-import util
+from funds import preprocess_fias as FI
+from util import util, padding as pad
+
 
 
 class SMWrapper(BaseEstimator, RegressorMixin):

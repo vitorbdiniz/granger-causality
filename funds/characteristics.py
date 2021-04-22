@@ -3,9 +3,9 @@ import numpy as np
 import statistics as st
 import datetime as dt
 
-from factors import nefin_risk_free, nefin_single_factor
+from factors.factors import nefin_risk_free, nefin_single_factor
 
-import util,padding as pad
+from util import util,padding as pad
 
 def extract_characteristics(alfas, fis, dropna="all", verbose=0):
     characteristics = { 

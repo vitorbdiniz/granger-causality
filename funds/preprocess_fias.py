@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import datetime as dt
 
-import util, padding as pad
+from util import util, padding as pad
 
 def preprocess_fis(fundos=pd.DataFrame(), freq="daily", verbose = 0):
     '''

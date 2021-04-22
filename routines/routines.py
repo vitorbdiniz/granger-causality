@@ -1,12 +1,12 @@
 import pandas as pd
 
-from factors import get_fatores
-from preprocess_fias import preprocess_fis
-from alpha import jensens_alpha
-from characteristics import extract_characteristics
-from granger import granger_tests, granger_scores
+from factors.factors import get_fatores
+from funds.preprocess_fias import preprocess_fis
+from funds.alpha import jensens_alpha
+from funds.characteristics import extract_characteristics
+from causality.granger import granger_tests, granger_scores
 
-import util, padding as pad
+from util import util, padding as pad
 
 
 def granger_cumulative(test = False, persist=True, verbose = 5):

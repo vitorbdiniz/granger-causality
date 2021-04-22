@@ -1,4 +1,4 @@
-import routines
+from routines import routines
 
 def main():
     routines.granger_cumulative(test = False, persist=True, verbose = 5)
