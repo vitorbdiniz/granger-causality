@@ -166,7 +166,7 @@ def preprocess_dates(fundo, fatores):
     '''
     fatores.dropna(inplace=True)
     fundo.dropna(inplace=True)
-    nome,cotas,MKT, SMB, HML, IML, WML, BAB, QMJ,dates = [],[],[],[],[],[],[],[], [],[]
+    nome,cotas,MKT, SMB, HML, IML, WML, dates = [],[],[],[],[],[],[],[]
     for i in range(fundo.shape[0]):
         if fundo["data"].iloc[i] in fatores.index:
             cotas += [fundo["variacao"].iloc[i]]
@@ -182,5 +182,5 @@ def preprocess_dates(fundo, fatores):
             dates += [fundo["data"].iloc[i]]
             nome += [fundo["fundo"].iloc[i]]
 
-    result = pd.DataFrame({"cotas": cotas, "MKT": MKT, "SMB": SMB, "HML": HML, "IML" : IML, "WML" : WML},index=dates)#, "BAB":BAB}, index=dates)
+    result = pd.DataFrame({"cotas": cotas, "MKT": MKT, "SMB": SMB, "HML": HML, "IML" : IML, "WML" : WML},index=dates)
     return result.drop(labels=result.index[0], axis="index")

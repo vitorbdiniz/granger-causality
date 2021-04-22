@@ -16,7 +16,7 @@ concat_date = lambda date : pd.DatetimeIndex([dt.date(date[0].iloc[i], date[1].i
 
 def nefin_factors(verbose=0):
     pad.verbose("Downloading Nefin Factors", level=3, verbose=verbose)
-    risk_factors = {factor : nefin_single_factor(factor=factor) for factor in ['Market', 'HML', 'SMB', 'WML', 'IML']}
+    risk_factors = pd.DataFrame({factor : nefin_single_factor(factor=factor) for factor in ['Market', 'HML', 'SMB', 'WML', 'IML']} )
 
     return risk_factors
 

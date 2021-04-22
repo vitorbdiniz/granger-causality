@@ -3,8 +3,8 @@
 Dep. Variable:                  cotas   R-squared:                       0.603
 Model:                            OLS   Adj. R-squared:                  0.576
 Method:                 Least Squares   F-statistic:                     21.91
-Date:                Tue, 06 Apr 2021   Prob (F-statistic):           2.86e-13
-Time:                        08:50:06   Log-Likelihood:                 334.33
+Date:                Tue, 20 Apr 2021   Prob (F-statistic):           2.86e-13
+Time:                        15:04:14   Log-Likelihood:                 334.33
 No. Observations:                  78   AIC:                            -656.7
 Df Residuals:                      72   BIC:                            -642.5
 Df Model:                           5                                         
