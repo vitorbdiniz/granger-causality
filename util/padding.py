@@ -26,12 +26,19 @@ def betwen_lines(msg):
 
 #Persist configurations
 
-def persist(df, path, to_persist=True, _verbose=0, verbose_level=1, verbose_str=""):
+def persist(data, path, to_persist=True, _verbose=0, verbose_level=1, verbose_str=""):
     if to_persist:
         verbose(verbose_str, level=verbose_level, verbose=_verbose)
-        df.to_csv(path)
-        verbose("-- OK.", level=verbose_level, verbose=_verbose)
         
+        if type(data) == pd.DataFrame or type(data) == pd.Series:
+            data.to_csv(path)
+        else:
+            write_file(data, path)
+            
+        verbose("-- OK.", level=verbose_level, verbose=_verbose)
+
+
+
 def persist_collection(collection, path, extension=".csv", to_persist=True, _verbose=0, verbose_level=0, verbose_str=""):
     if to_persist:
         verbose(verbose_str, level=verbose_level, verbose=_verbose)
@@ -39,3 +46,9 @@ def persist_collection(collection, path, extension=".csv", to_persist=True, _ver
             c_path = path + str(c) + extension
             persist(collection[c], c_path, to_persist=to_persist)
         verbose("-- OK.", level=verbose_level, verbose=_verbose)
+
+
+def write_file(data, path):
+    f = open(path, "w")
+    f.write(data) 
+    f.close()

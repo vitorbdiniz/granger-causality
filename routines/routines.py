@@ -9,51 +9,30 @@ from causality.granger import granger_tests, granger_scores
 from util import util, padding as pad
 
 
-def granger_cumulative(test = False, persist=True, verbose = 5):
-    fis = preprocess_fis(pd.read_csv("./data/cotas_fias.csv"), verbose=verbose)
-    fatores = get_fatores(source="nefin", verbose=verbose)
+def granger_routine(fis=None, fatores=None, window = None, test = False, persist=True, verbose = 5):    
+    if fis is None:
+        fis = preprocess_fis(pd.read_csv("./data/cotas_fias.csv"), verbose=verbose)
+    if fatores is None:
+        fatores = get_fatores(source="nefin", verbose=verbose)
+
+    directory = f'{int(window)}m' if window is not None else 'all_period'
     
+    #Jensen's alpha
     if test:
-        alfas = {FI : util.df_datetimeindex(pd.read_csv(f'./data/alphas/{FI}.csv', index_col=0)) for FI in fis.keys()}
+        alfas = {FI : util.df_datetimeindex(pd.read_csv(f'./data/alphas/{directory}/{FI}.csv', index_col=0)) for FI in fis.keys()}
     else:
-        alfas = jensens_alpha(fatores, fis, verbose=verbose)
-        pad.persist_collection(alfas, path='./data/alphas/', extension=".csv", to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo Alfas")
+        alfas = jensens_alpha(fatores, fis, janela=window, verbose=verbose)
+        pad.persist_collection(alfas, path=f'./data/alphas/{directory}/', extension=".csv", to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo Alfas")
 
     #caracteristicas
-    funds_characts = extract_characteristics(alfas, fis, dropna="any",verbose=verbose)
-    pad.persist_collection(funds_characts, path='./data/caracteristicas/', to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo características") 
+    funds_characts = extract_characteristics(alfas, fis, window=window, dropna="any",verbose=verbose)
+    pad.persist_collection(funds_characts, path=f'./data/caracteristicas/{directory}/', to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo características") 
     
-    #granger
+    #granger tests
     gtests = granger_tests(funds_characts, alfas, statistical_test='all',verbose=verbose)
-    pad.persist_collection(gtests, path='./data/granger_tests/', to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo testes de Granger") 
+    pad.persist_collection(gtests, path=f'./data/granger_tests/{directory}/', to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo testes de Granger") 
 
     #granger scores
     scores = granger_scores(gtests)
-    pad.persist(scores, path='./data/granger_tests/scores/granger_scores.csv', to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo scores do testes de Granger")
+    pad.persist(scores, path=f'./data/granger_tests/{directory}/scores/granger_scores.csv', to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo scores do testes de Granger")
 
-
-
-def granger_window(window=12,test = False, persist=True, verbose = 5):
-    '''
-        Realiza testes de Granger para séries temporais de `window` meses
-    '''
-    fis = preprocess_fis(pd.read_csv("./data/cotas_fias.csv"), verbose=verbose)
-    fatores = get_fatores(source="nefin", verbose=verbose)
-
-    if test:
-        alfas = {FI : util.df_datetimeindex(pd.read_csv(f'./data/alphas/{FI}.csv', index_col=0)) for FI in fis.keys()}
-    else:
-        alfas = jensens_alpha(fatores, fis, verbose=verbose)
-        pad.persist_collection(alfas, path='./data/alphas/', extension=".csv", to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo Alfas")
-
-    #caracteristicas
-    funds_characts = extract_characteristics(alfas, fis, dropna="any",verbose=verbose)
-    pad.persist_collection(funds_characts, path='./data/caracteristicas/', to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo características") 
-    
-    #granger
-    gtests = granger_tests(funds_characts, alfas, statistical_test='all',verbose=verbose)
-    pad.persist_collection(gtests, path='./data/granger_tests/', to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo testes de Granger") 
-
-    #granger scores
-    scores = granger_scores(gtests)
-    pad.persist(scores, path='./data/granger_tests/scores/granger_scores.csv', to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo scores do testes de Granger")

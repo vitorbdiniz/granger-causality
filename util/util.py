@@ -4,7 +4,7 @@ import numpy as np
 import datetime as dt
 import pandas_datareader as web
 
-import util,padding as pad
+from util import padding as pad
 
 """
 
@@ -48,6 +48,9 @@ def df_datetimeindex(df):
 
 def index_to_datetimeindex(index):
     return pd.DatetimeIndex( [ dt.datetime(year = get_year(d) , month= get_month(d) , day= get_day(d) ) for d in index ] )
+
+def check_index_duplicate(df):
+    return drop_duplicate_index(df).index.tolist() != df.index.tolist()
 
 def drop_duplicate_index(df):
     return df[~df.index.duplicated(keep='first')]
@@ -358,9 +361,9 @@ def getReturns(prices, form="DataFrame"):
     elif type(prices) == type(pd.Series({})):
         r = [0]+[prices.iloc[i] / prices.iloc[i-1] -1 for i in range(1, len(prices.index))]
 
-    if form == "DataFrame":
+    if form == "DataFrame" or form == pd.DataFrame:
         returns = pd.DataFrame({"returns":r}, index=prices.index)
-    elif form == "Series":
+    elif form == "Series" or form == pd.Series:
         returns = pd.Series(r, index=prices.index)
     else:
         returns = r
@@ -527,15 +530,6 @@ def moving_average(array, period):
         replaced_NaN += [sum_acc/(i+1)]
     NaN = pd.Series(replaced_NaN, index=NaN.index)
     return NaN.append(MA)
-
-
-def write_file(path, data):
-    #path = realpath(path)
-    f = open(path, "w")
-    f.write(data) 
-    f.close()
-    return
-
 
 
 

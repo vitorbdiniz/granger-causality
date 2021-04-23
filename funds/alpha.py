@@ -45,12 +45,12 @@ def jensens_alpha(risk_factors, portfolios_returns, janela=None,verbose=0):
     alphas = dict()
     i=1
     for each_fund in portfolios_returns:
-        pad.verbose(str(i)+". Calculando alfa do Fundo " + str(portfolios_returns[each_fund]["fundo"].iloc[0]) + " ---- faltam "+str(len(portfolios_returns.keys())-i), level=5, verbose=verbose)        
+        pad.verbose(f"{i}. Calculando alfa do Fundo {portfolios_returns[each_fund]['fundo'].iloc[0]} ---- Janela: {janela} ---- faltam {len(portfolios_returns.keys())-i}", level=5, verbose=verbose)        
         data = preprocess_dates(portfolios_returns[each_fund], risk_factors)
-        if janela:
-            alphas[each_fund] = alpha_window_algorithm(data, portfolios_returns[each_fund], columns, window=janela, fund_name=each_fund, verbose_counter=i, verbose=verbose)
-        else:
+        if janela is None:
             alphas[each_fund] = alpha_algorithm(data, portfolios_returns[each_fund], columns, fund_name=each_fund, verbose_counter=i, verbose=verbose)
+        else:
+            alphas[each_fund] = alpha_window_algorithm(data, portfolios_returns[each_fund], columns, window=janela, fund_name=each_fund, verbose_counter=i, verbose=verbose)
         i+=1
     return alphas
 
@@ -69,10 +69,10 @@ def alpha_window_algorithm(data, returns, columns, window=12, fund_name='', verb
     df = pd.DataFrame(columns=columns)
     for j in range(window, data.shape[0]):
         pad.verbose(f"{verbose_counter}.{j}. Calculando alfa do Fundo {fund_name} com uma janela móvel de {window/22} meses para o dia {data.index[j]} ---- faltam {len(data.index)-j}", level=4, verbose=verbose)
-        df.loc[data.index[j]] = get_factor_exposition(data.iloc[j-window:j+1], fund_name, verbose=verbose)
+        df.loc[data.index[j]] = get_factor_exposition(data.iloc[j-window:j+1], fund_name, window=window, verbose=verbose)
     return df
 
-def get_factor_exposition(df, name="portfolio", persist=True, verbose=0):
+def get_factor_exposition(df, name="portfolio", persist=True, window=None, verbose=0):
     """
         Realiza a regressão com base nos retornos do portfólio e nos fatores de risco calculados
 
@@ -81,8 +81,8 @@ def get_factor_exposition(df, name="portfolio", persist=True, verbose=0):
     data = preprocess_data(df)
     regr = linear_regression(data, target=["cotas"], test_size=0, cv=0, verbose=verbose, persist=persist)
     
-    if persist:
-        util.write_file(path="./data/alphas/regression_tables/tabela_"+str(name)+": "+str(data.index[-1]) + ".txt", data=str(regr.summary()) )
+    directory = 'all_period' if window is None else f'{int(window/22)}m'
+    pad.persist(str(regr.summary()), path=f"./data/alphas/{directory}/regression_tables/tabela_{name}: {data.index[-1]}.txt", to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="")
 
     return regr.get_stats()
 
