@@ -25,9 +25,11 @@ def granger_routine(fis=None, fatores=None, window = None, test = False, persist
         pad.persist_collection(alfas, path=f'./data/alphas/{directory}/', extension=".csv", to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo Alfas")
 
     #caracteristicas
-    funds_characts = extract_characteristics(alfas, fis, window=window, dropna="any",verbose=verbose)
-    pad.persist_collection(funds_characts, path=f'./data/caracteristicas/{directory}/', to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo características") 
-    
+    if False:
+        funds_characts = {FI : util.df_datetimeindex(pd.read_csv(f'./data/caracteristicas/{directory}/{FI}.csv', index_col=0)) for FI in fis.keys()}
+    else:
+        funds_characts = extract_characteristics(alfas, fis, window=window, dropna="any",verbose=verbose)
+        pad.persist_collection(funds_characts, path=f'./data/caracteristicas/{directory}/', to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo características") 
     #granger tests
     gtests = granger_tests(funds_characts, alfas, statistical_test='all',verbose=verbose)
     pad.persist_collection(gtests, path=f'./data/granger_tests/{directory}/', to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo testes de Granger") 

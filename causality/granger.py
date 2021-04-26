@@ -18,7 +18,11 @@ def granger_tests(characteristics, alfas, maxlag=15, statistical_test='params_ft
     gTests = dict()
     for fund in characteristics:
         i+=1
-        pad.verbose(f"{i}. Avaliando fundo {fund}", level=1, verbose=verbose)
+        pad.verbose(f"{i}. Avaliando fundo {fund}", level=2, verbose=verbose)
+        if characteristics[fund].shape[0] == 0 or alfas[fund].shape[0] == 0:
+            pad.verbose(f"---- Sem observações", level=2, verbose=verbose)
+            continue
+
 
         alfa = util.preprocess_serie(alfas[fund]['alpha'])
         alfa = stationarity_check(alfa, max_iter=5, verbose=verbose)
@@ -103,7 +107,7 @@ def stationarity_check(serie, max_iter=15, raise_error=False, verbose=0):
 def stationarity_transform(serie, max_iter=15, verbose=0):
     i = 0
     while max_iter > i and not is_stationarity(serie):
-        pad.verbose(f'{i}. Não estacionária -> Calculando a {i+1}ª diferença', level=4, verbose=verbose)
+        pad.verbose(f'{i+1}. Não estacionária -> Calculando a {i+1}ª diferença', level=4, verbose=verbose)
         serie = get_difference(serie)
         i += 1
     if not is_stationarity(serie):

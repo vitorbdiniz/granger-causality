@@ -8,7 +8,7 @@ from util import util
 def main():
     verbose = 5
     windows = [None, 12,24, 36]
-
+    windows = [36]
     fis     = preprocess_fis(pd.read_csv("./data/cotas_fias.csv"), verbose=verbose)
     fatores = get_fatores(source="nefin", verbose=verbose)
     for w in windows:
