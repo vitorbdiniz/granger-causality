@@ -356,11 +356,13 @@ def get_frequency(start = dt.date.today(), end = dt.date.today(), freq = "daily"
 
 def getReturns(prices, form="DataFrame"):
     prices = prices.dropna()
-    if type(prices) == type(pd.DataFrame({})):
-        r = [0]+[prices["Close"].iloc[i] / prices["Close"].iloc[i-1] -1 for i in range(1, len(prices.index))]
-    elif type(prices) == type(pd.Series({})):
-        r = [0]+[prices.iloc[i] / prices.iloc[i-1] -1 for i in range(1, len(prices.index))]
-
+    if len(prices) > 0:
+        if type(prices) == type(pd.DataFrame({})):
+            r = [None]+[prices["Close"].iloc[i] / prices["Close"].iloc[i-1] -1 for i in range(1, len(prices.index))]
+        elif type(prices) == type(pd.Series({})):
+            r = [None]+[prices.iloc[i] / prices.iloc[i-1] -1 for i in range(1, len(prices.index))]
+    else:
+        r = []
     if form == "DataFrame" or form == pd.DataFrame:
         returns = pd.DataFrame({"returns":r}, index=prices.index)
     elif form == "Series" or form == pd.Series:
