@@ -45,53 +45,58 @@ def jensens_alpha(risk_factors, portfolios_returns, janela=None,verbose=0):
     alphas = dict()
     i=1
     for each_fund in portfolios_returns:
-        pad.verbose(f"{i}. Calculando alfa do Fundo {portfolios_returns[each_fund]['fundo'].iloc[0]} ---- Janela: {janela} ---- faltam {len(portfolios_returns.keys())-i}", level=5, verbose=verbose)        
-        data = preprocess_dates(portfolios_returns[each_fund], risk_factors)
-        if janela is None:
-            alphas[each_fund] = alpha_algorithm(data, portfolios_returns[each_fund], columns, fund_name=each_fund, verbose_counter=i, verbose=verbose)
+        if type(portfolios_returns) == dict:
+            pad.verbose(f"{i}. Calculando alfa do Fundo {portfolios_returns[each_fund]['fundo'].iloc[0]} ---- Janela: {janela} ---- faltam {len(portfolios_returns.keys())-i}", level=5, verbose=verbose)
+            portfolio = portfolios_returns[each_fund]["variacao"]
+            portfolio.name = each_fund
         else:
-            alphas[each_fund] = alpha_window_algorithm(data, portfolios_returns[each_fund], columns, window=janela, fund_name=each_fund, verbose_counter=i, verbose=verbose)
+            pad.verbose(f"{i}. Calculando alfa do Fundo {each_fund} ---- Janela: {janela} ---- faltam {len(portfolios_returns.columns)-i}", level=5, verbose=verbose)
+            portfolio = portfolios_returns[each_fund]
+
+        data = risk_factors.join(portfolio, how='inner').dropna()
+        #data = preprocess_dates(portfolio, risk_factors)
+        alphas[each_fund] = alpha_algorithm(data, target_col=each_fund, columns=columns, window=janela, verbose_counter=i, verbose=verbose)
         i+=1
     return alphas
 
-def alpha_algorithm(data, returns, columns, fund_name='', verbose_counter=0, verbose=0):
+def alpha_algorithm(data, target_col, columns, window=12, verbose_counter=0, verbose=0):
     df = pd.DataFrame(columns=columns)
-    for j in range(20, data.shape[0]):
-        pad.verbose(f"{verbose_counter}.{j}. Calculando alfa do Fundo {fund_name} para o dia {data.index[j]} ---- faltam {len(data.index)-j}", level=4, verbose=verbose)
-        df.loc[data.index[j]] = get_factor_exposition(data.iloc[0:j+1], fund_name, verbose=verbose)
+
+    if window is not None:
+        w = window * 22
+    else:
+        w = 20
+    for j in range(w, data.shape[0]):
+        pad.verbose(f"{verbose_counter}.{j}. alfa: {target_col} ---- dia: {data.index[j]} ---- restantes: {len(data.index)-j}", level=4, verbose=verbose)
+        if window is None:
+            w = j
+        data_selected = data.iloc[j-w:j+1]
+        if data_selected.shape[0] > 2:
+            df.loc[data.index[j]] = get_factor_exposition(data_selected, target_col, window=window, verbose=verbose)
     return df
 
-def alpha_window_algorithm(data, returns, columns, window=12, fund_name='', verbose_counter=0, verbose=0):
-    '''
-        Calcula o alfa de um portfolio específico dentro de uma janela mensal móvel
-    '''
-    window *= 22 #Quantidade média de dias úteis em um por mês em um ano
-    df = pd.DataFrame(columns=columns)
-    for j in range(window, data.shape[0]):
-        pad.verbose(f"{verbose_counter}.{j}. Calculando alfa do Fundo {fund_name} com uma janela móvel de {window/22} meses para o dia {data.index[j]} ---- faltam {len(data.index)-j}", level=4, verbose=verbose)
-        df.loc[data.index[j]] = get_factor_exposition(data.iloc[j-window:j+1], fund_name, window=window, verbose=verbose)
-    return df
 
-def get_factor_exposition(df, name="portfolio", persist=True, window=None, verbose=0):
+def get_factor_exposition(df, target_col, window=None, persist=False, verbose=0):
     """
         Realiza a regressão com base nos retornos do portfólio e nos fatores de risco calculados
 
         retorna uma lista: alfa + betas + tvalores + pvalores + fvalor + pvalor do fvalor + R² ajustado
     """
     data = preprocess_data(df)
-    regr = linear_regression(data, target=["cotas"], test_size=0, cv=0, verbose=verbose, persist=persist)
+    cv = 5 if data.shape[0] > 100 else None
+    regr = linear_regression(data, target=target_col, cv=cv, verbose=verbose, persist=persist)
     
-    directory = 'all_period' if window is None else f'{int(window/22)}m'
-    pad.persist(str(regr.summary()), path=f"./data/alphas/{directory}/regression_tables/tabela_{name}: {data.index[-1]}.txt", to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="")
+    directory = 'all_period' if window is None else f'{int(window)}m'
+    pad.persist(str(regr.summary()), path=f"./data/alphas/{directory}/regression_tables/tabela_{target_col}: {data.index[-1].date()}.txt", to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="")
 
     return regr.get_stats()
 
-def linear_regression(data, target, test_size = 0.1, cv=0, verbose=0, persist=False):
+def linear_regression(data, target, cv=None, verbose=0, persist=False):
     y = data[target]
     X = add_constant(data.drop(columns=target))
     model = SMWrapper(sm.OLS)
-    if cv != 0 or test_size != 0:
-        regr = cross_validate(estimator=model, X=X, y=y, cv=7, n_jobs=-1, return_estimator=True, verbose=0)
+    if cv is not None:
+        regr = cross_validate(estimator=model, X=X, y=y, cv=cv, return_estimator=True)
         best_model_score, index = -9999999,0
         for i in range(len(regr["test_score"])):
             if regr["test_score"][i] > best_model_score:
@@ -163,7 +168,7 @@ def get_columns(fatores):
 def preprocess_dates(fundo, fatores):
     '''
         Compara datas entre os dataframes de fundos e fatores, mantendo apenas datas existentes nos dois.
-    '''
+    '''    
     fatores.dropna(inplace=True)
     fundo.dropna(inplace=True)
     nome,cotas,MKT, SMB, HML, IML, WML, dates = [],[],[],[],[],[],[],[]
