@@ -24,8 +24,9 @@ def granger_routine(fis=None, fatores=None, window = None, test = False, persist
         alfas = jensens_alpha(fatores, fis, janela=window, verbose=verbose)
         pad.persist_collection(alfas, path=f'./data/alphas/{directory}/', extension=".csv", to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo Alfas")
 
+    
     #caracteristicas
-    if False:
+    if test:
         funds_characts = {FI : util.df_datetimeindex(pd.read_csv(f'./data/caracteristicas/{directory}/{FI}.csv', index_col=0)) for FI in fis.keys()}
     else:
         funds_characts = extract_characteristics(alfas, fis, window=window, dropna="any",verbose=verbose)
@@ -37,4 +38,13 @@ def granger_routine(fis=None, fatores=None, window = None, test = False, persist
     #granger scores
     scores = granger_scores(gtests)
     pad.persist(scores, path=f'./data/granger_tests/{directory}/scores/granger_scores.csv', to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo scores do testes de Granger")
+
+
+def alpha_routine(fis, fatores, windows = [None, 12,24, 36], verbose=0):
+
+    for window in windows:
+        directory = f'{int(window)}m' if window is not None else 'all_period'
+        #Jensen's alpha
+        alfas = jensens_alpha(fatores, fis, janela=window, verbose=verbose)
+        pad.persist_collection(alfas, path=f'./data/alphas/{directory}/', extension=".csv", to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo Alfas")
 
