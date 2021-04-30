@@ -410,17 +410,22 @@ def mean_annual_return(array):
 
 
 def retornos_acumulados_por_periodo(retornos:pd.Series, to_freq='M', calculate_current_freq_returns=False):
-    if len(retornos) == 0:
-        return retornos
+    pad.verbose(f'{retornos.name}', level=3, verbose=4)
+    retornos = retornos.dropna()
     if calculate_current_freq_returns:
         retornos = returns(retornos)
+    if len(retornos) == 0:
+        return retornos
     new_index = retornos.resample(to_freq[0].upper()).pad().index
     values = []
 
     i0 = 0
-    for d in new_index:
+    for d in new_index:          
         i1 = retornos.index.get_loc(d, method='pad')+1
-        values.append( cumulative_return(retornos[i0:i1]).tolist()[-1] )
+        acc_return = cumulative_return(retornos[i0:i1]).tolist()
+        if len(acc_return) == 0:
+            acc_return = [0]
+        values.append( acc_return[-1] )
         i0 = i1
     return pd.Series(values, index=new_index)
 
@@ -431,7 +436,8 @@ def retornos_acumulados_por_periodo_df(retornos:pd.DataFrame, to_freq='M', calcu
     OUTROS CÁLCULOS
 
 """
-
+def list_to_string(seq, sep=','):
+    return sep.join(str(i) for i in seq)
 
 def is_none(val):
     if type(val) == pd.Series or type(val) == pd.DataFrame:

@@ -1,4 +1,6 @@
 import pandas as pd
+import os
+
 #Verbose configurations
 
 def verbose(msg, level, verbose=0):
@@ -41,6 +43,7 @@ def persist(data, path, to_persist=True, _verbose=0, verbose_level=1, verbose_st
 
 def persist_collection(collection, path, extension=".csv", to_persist=True, _verbose=0, verbose_level=0, verbose_str=""):
     if to_persist:
+        make_dir(path)
         verbose(verbose_str, level=verbose_level, verbose=_verbose)
         for c in collection:
             c_path = path + str(c) + extension
@@ -52,3 +55,15 @@ def write_file(data, path):
     f = open(path, "w")
     f.write(data) 
     f.close()
+
+
+def list_to_string(seq, sep=','):
+    return sep.join(str(i) for i in seq)
+
+def make_dir(path='./'):
+    if not os.path.isdir(path):
+        dir_list = [d for d in path.split('/') if len(d) > 0]
+        for i in range(1, len(dir_list)+1):
+            directory = list_to_string(dir_list[0:i], sep='/')
+            if not os.path.isdir(directory):
+                os.mkdir(directory)
