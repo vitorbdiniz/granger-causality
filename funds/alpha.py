@@ -61,40 +61,27 @@ def jensens_alpha(risk_factors, portfolios_returns, janela=None,verbose=0):
 
 def alpha_algorithm(data, target_col, columns, window=12, verbose_counter=0, verbose=0):
     df = pd.DataFrame(columns=columns)
-
     if window is not None:
-        w = window * 22
+        w = window
     else:
-        w = 20
+        w = 12
     for j in range(w, data.shape[0]):
         pad.verbose(f"{verbose_counter}.{j}. alfa: {target_col} ---- dia: {data.index[j]} ---- restantes: {len(data.index)-j}", level=4, verbose=verbose)
         if window is None:
             w = j
         data_selected = data.iloc[j-w:j+1]
         if data_selected.shape[0] > 2:
-            df.loc[data.index[j]] = get_factor_exposition(data_selected, target_col, window=window, verbose=verbose)
+            data_selected = preprocess_data(data_selected)
+            df.loc[data.index[j]] = linear_regression(data_selected, target_col).get_stats()
     return df
 
-
-def get_factor_exposition(df, target_col, window=None, persist=False, verbose=0):
-    """
-        Realiza a regressão com base nos retornos do portfólio e nos fatores de risco calculados
-
-        retorna uma lista: alfa + betas + tvalores + pvalores + fvalor + pvalor do fvalor + R² ajustado
-    """
-    data = preprocess_data(df)
-    cv = 5 if data.shape[0] > 100 else None
-    regr = linear_regression(data, target=target_col, cv=cv, verbose=verbose, persist=persist)
-    
-    directory = 'all_period' if window is None else f'{int(window)}m'
-    pad.persist(str(regr.summary()), path=f"./data/alphas/{directory}/regression_tables/tabela_{target_col}: {data.index[-1].date()}.txt", to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="")
-
-    return regr.get_stats()
-
-def linear_regression(data, target, cv=None, verbose=0, persist=False):
+def linear_regression(data, target):
     y = data[target]
     X = add_constant(data.drop(columns=target))
     model = SMWrapper(sm.OLS)
+
+    cv = 5 if data.shape[0] > 100 else None
+
     if cv is not None:
         regr = cross_validate(estimator=model, X=X, y=y, cv=cv, return_estimator=True)
         best_model_score, index = -9999999,0
