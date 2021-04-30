@@ -40,11 +40,14 @@ def granger_routine(fis=None, fatores=None, window = None, test = False, persist
     pad.persist(scores, path=f'./data/granger_tests/{directory}/scores/granger_scores.csv', to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo scores do testes de Granger")
 
 
-def alpha_routine(fis, fatores, windows = [None, 12,24, 36], verbose=0):
-
+def alpha_routine(fis, fatores, period = 'day', windows = [None, 12,24, 36], verbose=0, persist=False):
+    windows_dict = {'day': 22, 'month':1, 'quarter':0.25, 'year':1/12}
     for window in windows:
-        directory = f'{int(window)}m' if window is not None else 'all_period'
+        rolling_window = f'{int(window)}m' if window is not None else 'all_period'
+        if window is not None:
+            window = int(window*windows_dict[period])
+
         #Jensen's alpha
         alfas = jensens_alpha(fatores, fis, janela=window, verbose=verbose)
-        pad.persist_collection(alfas, path=f'./data/alphas/{directory}/', extension=".csv", to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo Alfas")
+        pad.persist_collection(alfas, path=f'./data/alphas/{period}/{rolling_window}/', extension=".csv", to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo Alfas")
 
