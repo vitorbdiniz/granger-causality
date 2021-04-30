@@ -409,9 +409,11 @@ def mean_annual_return(array):
     return annual_return_cosmos    
 
 
-def retornos_acumulados_por_periodo(retornos:pd.Series, to_freq='M'):
+def retornos_acumulados_por_periodo(retornos:pd.Series, to_freq='M', calculate_current_freq_returns=False):
     if len(retornos) == 0:
         return retornos
+    if calculate_current_freq_returns:
+        retornos = returns(retornos)
     new_index = retornos.resample(to_freq[0].upper()).pad().index
     values = []
 
@@ -422,6 +424,8 @@ def retornos_acumulados_por_periodo(retornos:pd.Series, to_freq='M'):
         i0 = i1
     return pd.Series(values, index=new_index)
 
+def retornos_acumulados_por_periodo_df(retornos:pd.DataFrame, to_freq='M', calculate_current_freq_returns=False):
+    return pd.DataFrame({col : retornos_acumulados_por_periodo(retornos[col], to_freq, calculate_current_freq_returns) for col in retornos})
 """
 
     OUTROS CÁLCULOS
