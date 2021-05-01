@@ -72,7 +72,13 @@ def alpha_algorithm(data, target_col, columns, window=12, verbose_counter=0, ver
         data_selected = data.iloc[j-w:j+1]
         if data_selected.shape[0] > 2:
             data_selected = preprocess_data(data_selected)
-            df.loc[data.index[j]] = linear_regression(data_selected, target_col).get_stats()
+            try:
+                regr_res = pd.Series(linear_regression(data_selected, target_col).get_stats(), index=columns)
+                df.loc[data.index[j]] = regr_res
+            except:
+                print(len(regr_res))
+                print(len(columns))
+                exit(regr_res)
     return df
 
 def linear_regression(data, target):
