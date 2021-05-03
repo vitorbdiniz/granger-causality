@@ -55,16 +55,6 @@ def check_index_duplicate(df):
 def drop_duplicate_index(df):
     return df[~df.index.duplicated(keep='first')]
 
-def eliminate_duplicates_indexes(serie):
-    index = []
-    check_indexes = set()
-    values = []
-    for i in serie.index:
-        if i not in check_indexes:
-            index += [i]
-            values += [serie.loc[i]]
-            check_indexes.add(i)
-    return pd.Series(values, index)
 
 def get_previous_data(series, index, dropna=False):
     if dropna:
