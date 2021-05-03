@@ -6,7 +6,7 @@ import datetime as dt
 from factors.factors import nefin_risk_free, nefin_single_factor
 from util import util,padding as pad
 
-def extract_characteristics(alphas:dict, fias_characteristics = None, freq = 'M', window = None, dropna="all", verbose=0):
+def extract_characteristics(fias_characteristics = None, freq = 'M', window = None, verbose=0):
     '''
         Calcula características do dict `fias_characteristics` que contém informações dos fundos.
         alphas: {dict} -> contendo o alfa e os betas em dict de DataFrames;
@@ -19,7 +19,7 @@ def extract_characteristics(alphas:dict, fias_characteristics = None, freq = 'M'
         fias_characteristics = get_characts(freq)
 
     result = {
-        'variation'          : get_return_df(fias_characteristics['fis_acc'], window=window),
+        'variation'          : get_return_df(fias_characteristics['fis_acc'], window=window, verbose= verbose),
         'sharpe'             : get_sharpe_ratio_df(fias_characteristics['fis_acc'], freq=freq, window=window, verbose=verbose),
         'treynor'            : get_treynor_ratio_df(fias_characteristics['fis_acc'], alphas, freq=freq, window=window, verbose=verbose),
         'lifetime'           : fias_characteristics['lifetime'],
@@ -74,14 +74,25 @@ def get_treynor_ratio(returns:pd.Series, betas:pd.Series, Rf:pd.Series=None, fre
     return treynor
 
 
-def get_treynor_ratio_df(returns:pd.DataFrame, alphas:dict, freq=None, window=None, verbose=0):
+def get_treynor_ratio_df(returns:pd.DataFrame, freq=None, window=None, verbose=0):
     result = pd.DataFrame(columns = returns.columns, index = returns.index)
     Rf = nefin_risk_free(freq=freq)
+    betas = get_betas(window, freq)
     for i in returns.shape[1]:
         portfolio = returns.columns[i]
         pad.verbose(f'{i}. Índice de Treynor --- frequência {freq} --- janela {window} --- Faltam {returns.shape[1]-i}', level=5, verbose=verbose)
-        result[portfolio] = get_treynor_ratio(returns[portfolio], alphas[portfolio]['beta_Market'], Rf=Rf, freq=freq, window=window)
+        result[portfolio] = get_treynor_ratio(returns[portfolio], betas[portfolio], Rf=Rf, freq=freq, window=window)
     return result.dropna(how='all')
+
+def get_betas(window, freq):
+    freq_dict = {'D' : 'day', 'M' : 'month', 'Q' : 'quarter', 'Y' : 'year' }
+    window = f'{window}m' if window is not None else 'all_period'
+    path = f'./data/alphas/{freq_dict[freq]}/{window}/'
+
+    betas = pd.DataFrame({file.split('.')[0] : util.df_datetimeindex( pd.read_csv(path+file, index_col=0) )['beta_Market'] for file in util.get_files(path)}, index = pd.date_range(start='2000-01-01', end='2020-12-31', freq=freq) ).dropna(how='all')
+
+    return betas
+
 
 '''
     VOLATILITY
@@ -169,7 +180,7 @@ def get_return(retornos, window=None, return_type = pd.Series):
         retornos_acc = pd.Series(retornos_acc, index=retornos.index[window-1:len(retornos)])
     return retornos_acc
 
-def get_return_df(returns:pd.DataFrame, window=None):
+def get_return_df(returns:pd.DataFrame, window=None, verbose=0):
     for i in returns.shape[1]:
         portfolio = returns.columns[i]
         pad.verbose(f'{i}. Retorno acumulado --- janela {window} --- Faltam {returns.shape[1]-i}', level=5, verbose=verbose)
