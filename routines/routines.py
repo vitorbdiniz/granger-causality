@@ -51,3 +51,31 @@ def alpha_routine(fis, fatores, period = 'day', windows = [None, 12,24, 36], ver
         alfas = jensens_alpha(fatores, fis, janela=window, verbose=verbose)
         pad.persist_collection(alfas, path=f'./data/alphas/{period}/{rolling_window}/', extension=".csv", to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo Alfas")
 
+
+def characteristics_routine(freqs = ['M', 'Q'], windows = [None, 12, 24, 36], verbose=0, persist=False):
+    result = dict()
+    for freq in freqs:
+        fias_characteristics = get_characts_economatica(freq=freq)
+        for window in windows:
+            characteristics = extract_characteristics(fias_characteristics, freq = freq, window = window, verbose=0)
+            result[(window, freq)] = characteristics
+            pad.persist_collection(characteristics, path=f'./data/caracteristicas/{period}/{window}/', extension=".csv", to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo Características")
+    return result
+
+def get_characts_economatica(freq='M'):
+    pad.verbose('Buscando dados do Economática', level=4, verbose=verbose)
+    freq_dic = {'M':'month', 'Q':'quarter', 'Y':'year', 'D':'day'}
+    names = ['fis_acc', 'capt', 'capt_liq', 'cotistas', 'PL', 'resgate', 'resgate_IR', 'resgate_total', 'lifetime']
+    characteristics = {n : util.df_datetimeindex(pd.read_csv(f'./data/economatica/{freq_dic[freq]}/{n}_economatica_{freq_dic[freq]}.csv', index_col=0)) for n in names}
+    return characteristics
+
+def get_alphas(window, freq, verbose=0):
+    pad.verbose('Buscando alfas', level=4, verbose=verbose)
+
+    freq_dict = {'D' : 'day', 'M' : 'month', 'Q' : 'quarter', 'Y' : 'year' }
+    window = f'{window}m' if window is not None else 'all_period'
+    path = f'./data/alphas/{freq_dict[freq]}/{window}/'
+
+    alphas = {file.split('.')[0] : util.df_datetimeindex( pd.read_csv(path+file, index_col=0) ) for file in util.get_files(path)}
+    return alphas
+
