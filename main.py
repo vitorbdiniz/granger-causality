@@ -26,7 +26,7 @@ def main(routine='alpha', period = 'month'):
         routines.alpha_routine(fis, fatores, period=period, windows=windows, verbose=verbose, persist=persist)
     
     elif routine == 'characteristics':
-        routines.characteristics_routine(freqs = ['M', 'Q'], windows = [12, 24, 36, 48, 60, None], verbose=verbose, persist=persist)
+        routines.characteristics_routine(freqs = ['M','Q'], windows = [24, 36, 48, 60, None], verbose=verbose, persist=persist)
 
     else:
         fis = preprocess_fis(pd.read_csv("./data/cotas_fias.csv"), verbose=verbose)

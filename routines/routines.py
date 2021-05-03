@@ -4,7 +4,7 @@ from factors.factors import get_fatores
 from funds.preprocess_fias import preprocess_fis
 from funds.alpha import jensens_alpha
 from funds.characteristics import extract_characteristics
-from causality.granger import granger_tests, granger_scores
+from causality.granger import granger_causality, granger_scores
 
 from util import util, padding as pad
 
@@ -18,7 +18,7 @@ def granger_routine(characteristics=None, alphas=None, freqs = ['M', 'Q'], windo
                 characteristics = get_characteristics(freq, window)
             if alphas is None:
                 alphas = get_alphas(window, freq, verbose=verbose)
-            gtests = granger_tests(characteristics, alphas, statistical_test='all', verbose=verbose)
+            gtests = granger_causality(characteristics, alphas, maxlag=15, statistical_test='all', verbose=verbose)
             pad.persist_collection(gtests, path=f'./data/granger_tests/{freq_dic[freq]}/{window}/', to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo testes de Granger") 
 
             #granger scores

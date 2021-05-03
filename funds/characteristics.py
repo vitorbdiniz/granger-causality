@@ -15,25 +15,29 @@ def extract_characteristics(fias_characteristics = None, freq = 'M', window = No
 
         return: {dict} -> dict de DataFrames de fundos. Cada DF é uma característica específica
     '''
+
+    windows_dict = {'D': 22, 'M':1, 'Q':0.25, 'Y':1/12}
+    w = int(windows_dict[freq] * window) if window is not None else window
+
     if fias_characteristics is None:
         fias_characteristics = get_characts(freq)
     std = volatility_df(fias_characteristics['fis_acc'], method='std', window=window, verbose=verbose)
 
     result = {
-        'variation'          : get_return_df(fias_characteristics['fis_acc'], window=window, verbose= verbose),
-        'sharpe'             : get_sharpe_ratio_df(fias_characteristics['fis_acc'],  std, freq=freq, window=window, verbose=verbose),
-        'treynor'            : get_treynor_ratio_df(fias_characteristics['fis_acc'], freq=freq, window=window, verbose=verbose),
+        'variation'          : get_return_df(fias_characteristics['fis_acc'], window=w, verbose= verbose),
+        'sharpe'             : get_sharpe_ratio_df(fias_characteristics['fis_acc'],  std, freq=freq, window=w, verbose=verbose),
+        'treynor'            : get_treynor_ratio_df(fias_characteristics['fis_acc'], betas=window,freq=freq, window=w, verbose=verbose),
         'lifetime'           : fias_characteristics['lifetime'],
-        'information_ratio'  : information_ratio_df(fias_characteristics['fis_acc'] , freq=freq, window=window, verbose=verbose),
+        'information_ratio'  : information_ratio_df(fias_characteristics['fis_acc'] , freq=freq, window=w, verbose=verbose),
         'standard_deviation' : std,
-        'downside_deviation' : volatility_df(fias_characteristics['fis_acc'], method='dsd', window=window, verbose=verbose),
+        'downside_deviation' : volatility_df(fias_characteristics['fis_acc'], method='dsd', window=w, verbose=verbose),
         'equity'             : fias_characteristics['PL'],
         'cotistas'           : fias_characteristics['cotistas'],
-        'captacao'           : trailing_sum_df(fias_characteristics['capt'], window = window, verbose=verbose),
-        'captacao_liquida'   : trailing_sum_df(fias_characteristics['capt_liq'],window = window, verbose=verbose),
-        'resgate'            : trailing_sum_df(fias_characteristics['resgate'], window = window, verbose=verbose),
-        'resgate_IR'         : trailing_sum_df(fias_characteristics['resgate_IR'], window = window, verbose=verbose),
-        'resgate_total'      : trailing_sum_df(fias_characteristics['resgate_total'], window = window, verbose=verbose)
+        'captacao'           : trailing_sum_df(fias_characteristics['capt'], window =w, verbose=verbose),
+        'captacao_liquida'   : trailing_sum_df(fias_characteristics['capt_liq'],window =w, verbose=verbose),
+        'resgate'            : trailing_sum_df(fias_characteristics['resgate'], window =w, verbose=verbose),
+        'resgate_IR'         : trailing_sum_df(fias_characteristics['resgate_IR'], window =w, verbose=verbose),
+        'resgate_total'      : trailing_sum_df(fias_characteristics['resgate_total'], window =w, verbose=verbose)
     }
     return result
 
@@ -86,11 +90,12 @@ def get_treynor_ratio(returns:pd.Series, betas:pd.Series, Rf:pd.Series=None, fre
     return treynor
 
 
-def get_treynor_ratio_df(returns:pd.DataFrame, freq=None, window=None, verbose=0):
+def get_treynor_ratio_df(returns:pd.DataFrame, betas = None, freq=None, window=None, verbose=0):
     pad.verbose('- Treynor-ratio -', level=2, verbose=verbose)
     result = pd.DataFrame(columns = returns.columns, index = returns.index)
     Rf = nefin_risk_free(freq=freq)
-    betas = get_betas(window, freq, verbose=verbose)
+    if betas is None or type(betas) is int:
+        betas = get_betas(betas, freq, verbose=verbose)
     for i in range(returns.shape[1]):
         portfolio = returns.columns[i]
         pad.verbose(f'{i}. Índice de Treynor --- frequência {freq} --- janela {window} --- Faltam {returns.shape[1]-i}', level=5, verbose=verbose)

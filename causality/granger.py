@@ -41,44 +41,6 @@ def granger_causality(characteristics:dict, alfas:dict, maxlag=15, statistical_t
             results[fundo].loc[caracteristica] = granger_result
     
     return results
-            
-
-
-def granger_tests(characteristics, alfas, maxlag=15, statistical_test='params_ftest', verbose=0):
-    i = 0
-    gTests = dict()
-    for fund in characteristics:
-        i+=1
-        pad.verbose(f"{i}. Avaliando fundo {fund}", level=2, verbose=verbose)
-        if characteristics[fund].shape[0] == 0 or alfas[fund].shape[0] == 0:
-            pad.verbose(f"---- Sem observações", level=2, verbose=verbose)
-            continue
-
-
-        alfa = util.preprocess_serie(alfas[fund]['alpha'])
-        alfa = stationarity_check(alfa, max_iter=5, verbose=verbose)
-
-        if util.is_none(alfa):
-            continue
-
-        gTests[fund] = pd.DataFrame(columns=range(1,maxlag+1))
-        j = 1
-        for char in characteristics[fund]:
-            pad.verbose(f"{i}.{j}. Avaliando {char} X alfa", level=1, verbose=verbose)
-            j+=1
-            metric = util.preprocess_serie(characteristics[fund][char])
-            metric = stationarity_check(metric, max_iter=5, verbose=verbose)
-
-            if util.is_none(metric):
-                continue
-            data = util.join_series(series_list=[alfa, metric]).values
-
-            granger_result = granger_causality_test(data, maxlag, statistical_test, scores=True)
-            gTests[fund].loc[char] = granger_result
-        
-    return gTests
-
-
 
 def granger_causality_test(data, maxlag=10, statistical_test='all', scores=True,verbose=False):
     """
