@@ -28,9 +28,12 @@ def extract_characteristics(fias_characteristics = None, freq = 'M', window = No
         'standard_deviation' : std,
         'downside_deviation' : volatility_df(fias_characteristics['fis_acc'], method='dsd', window=window, verbose=verbose),
         'equity'             : fias_characteristics['PL'],
-        'captacao'           : fias_characteristics['capt'],
-        'captacao_liquida'   : fias_characteristics['capt_liq'],
-        'cotistas'           : fias_characteristics['cotistas']
+        'cotistas'           : fias_characteristics['cotistas'],
+        'captacao'           : trailing_sum_df(fias_characteristics['capt'], window = window, verbose=verbose),
+        'captacao_liquida'   : trailing_sum_df(fias_characteristics['capt_liq'],window = window, verbose=verbose),
+        'resgate'            : trailing_sum_df(fias_characteristics['resgate'], window = window, verbose=verbose),
+        'resgate_IR'         : trailing_sum_df(fias_characteristics['resgate_IR'], window = window, verbose=verbose),
+        'resgate_total'      : trailing_sum_df(fias_characteristics['resgate_total'], window = window, verbose=verbose)
     }
     return result
 
@@ -118,7 +121,7 @@ def volatility_df(returns:pd.DataFrame, method="std", window=None, verbose=0):
         portfolio = returns.columns[i]
         pad.verbose(f'{i}. Volatilidade --- método {method} --- janela {window} --- Faltam {returns.shape[1]-i}', level=5, verbose=verbose)
         result[portfolio] = volatility(returns[portfolio], method=method, window=window)
-
+    
     pad.verbose('line', level=2, verbose=verbose)
     return result.dropna(how='all')
 
@@ -135,7 +138,6 @@ def volatility(returns:pd.Series, method="std", window=None):
     if window is None:
         vol = cumulative_volatility(returns, method)
     else:
-        window *= 22
         vol = window_volatility(returns, method, window)
     return vol
 
@@ -180,7 +182,7 @@ def information_ratio_df(returns:pd.DataFrame, freq=None, window=None, verbose=0
     return result.dropna(how='all')
 
 def information_ratio(returns:pd.Series, mkt_returns=None, window=None):
-    difference = (returns - mkt_returns).dropna()
+    difference = (returns - mkt_returns)
     premium = get_return(difference, window=window)
     tracking_error = volatility( difference, method='std', window=window )
     IR = premium / tracking_error
@@ -210,6 +212,32 @@ def get_return_df(returns:pd.DataFrame, window=None, verbose=0):
         pad.verbose(f'{i}. Retorno acumulado --- janela {window} --- Faltam {returns.shape[1]-i}', level=5, verbose=verbose)
         result[portfolio] = get_return(returns[portfolio], window=window)
 
+    pad.verbose('line', level=2, verbose=verbose)
+    return result.dropna(how='all')
+
+
+'''
+    Trailing sum
+'''
+
+def trailing_sum_df(serie, window = None):
+    serie = serie.dropna()
+    if len(serie) > 0:
+        if window is None:
+            result = [serie[0 : i].sum() for i in range(0, serie.shape[0])]
+        else:
+            result = [serie[i-window : i].sum() for i in range(window, serie.shape[0])]
+    else:
+        result = pd.Series([], index=serie.index)
+    return result
+
+def trailing_sum_df(data, window = None, verbose=0):
+    pad.verbose('- Trailing sum -', level=2, verbose=verbose)
+    result = pd.DataFrame(columns = data.columns, index = data.index)
+    for i in range(data.shape[1]):
+        portfolio = data.columns[i]
+        pad.verbose(f'{i}. Trailing sum --- janela {window} --- Faltam {data.shape[1]-i}', level=5, verbose=verbose)
+        result[portfolio] = get_return(data[portfolio], window=window)
     pad.verbose('line', level=2, verbose=verbose)
     return result.dropna(how='all')
 

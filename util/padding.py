@@ -28,10 +28,9 @@ def betwen_lines(msg):
 
 #Persist configurations
 
-def persist(data, path, to_persist=True, _verbose=0, verbose_level=1, verbose_str=""):
+def persist(data, path, to_persist=True, _verbose=0, verbose_level=5, verbose_str=""):
     if to_persist:
         verbose(verbose_str, level=verbose_level, verbose=_verbose)
-        
         if type(data) == pd.DataFrame or type(data) == pd.Series:
             data.to_csv(path)
         else:
@@ -41,10 +40,10 @@ def persist(data, path, to_persist=True, _verbose=0, verbose_level=1, verbose_st
 
 
 
-def persist_collection(collection, path, extension=".csv", to_persist=True, _verbose=0, verbose_level=0, verbose_str=""):
+def persist_collection(collection, path, extension=".csv", to_persist=True, _verbose=0, verbose_level=5, verbose_str=""):
     if to_persist:
-        make_dir(path)
         verbose(verbose_str, level=verbose_level, verbose=_verbose)
+        make_dir(path)
         for c in collection:
             c_path = path + str(c) + extension
             persist(collection[c], c_path, to_persist=to_persist)

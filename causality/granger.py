@@ -12,6 +12,37 @@ from util import util, padding as pad
 
 """
 
+def granger_causality(characteristics:dict, alfas:dict, maxlag=15, statistical_test='params_ftest', verbose=0):
+    '''
+        alfas: {dict}   ---     fundo:str -> alfas:pd.DataFrame -> resultados+estatísticas
+        characteristics: {dict} --- caracteristica:str -> data:pd.DataFrame -> fundos
+    '''
+    results = dict()
+    i=0
+    for fundo in alfas.keys():
+        i+=1
+        alfa = util.preprocess_serie(alfas[fundo]['alpha'])
+        alfa = stationarity_check(alfa, max_iter=5, verbose=verbose)
+        if util.is_none(alfa):
+            continue
+        
+        results[fundo] = pd.DataFrame(columns=range(1,maxlag+1))
+        j=0
+        for caracteristica in characteristics.keys():
+            j+=1
+            pad.verbose(f'{i}.{j}. Testes de Granger --- faltam {len(alfas.keys()) - i} fundos --- faltam {len(characteristics.keys()) - j} caracteristicas', level=5, verbose=verbose)
+
+            selected_characteristic = util.preprocess_serie(characteristics[caracteristica][fundo])
+            selected_characteristic = stationarity_check(selected_characteristic, max_iter=5, verbose=verbose)
+            if util.is_none(selected_characteristic):
+                continue
+            data = util.join_series(series_list=[alfa, selected_characteristic]).values
+            granger_result = granger_causality_test(data, maxlag, statistical_test, scores=True)
+            results[fundo].loc[caracteristica] = granger_result
+    
+    return results
+            
+
 
 def granger_tests(characteristics, alfas, maxlag=15, statistical_test='params_ftest', verbose=0):
     i = 0

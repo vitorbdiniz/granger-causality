@@ -374,21 +374,21 @@ def cumulative_return(retornos, return_type = pd.Series):
         return_type: {pandas.Series, list}
     '''
     retornos = retornos.dropna() if type(retornos) == pd.Series else [x for x in retornos if x is not None]
+
     capital = 1
     acumulado = []
     for r in retornos:
-        if not (r == None or pd.isna(r)):
-            capital = capital*(1+r)
-        acumulado += [capital-1]
-    
-    if acumulado == []:
-        acumulado = [None]
+        capital = capital*(1+r)
+        acumulado += [capital-1]      
 
     if return_type == pd.Series:
         if type(retornos) == pd.Series:
             acumulado = pd.Series(acumulado, index=retornos.index)
         else:
             acumulado = pd.Series(acumulado, index=range(len(retornos)))
+    else:
+        if len(acumulado) == 0:
+            acumulado = [None]
     return acumulado
 
 
