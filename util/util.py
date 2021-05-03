@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 import datetime as dt
 import pandas_datareader as web
+from os import listdir
+from os.path import isfile, join
 
 from util import padding as pad
 
@@ -637,3 +639,7 @@ def preprocess_serie(serie):
 def preprocess_series(series_list):
     result = [preprocess_serie(serie) for serie in series_list]
     return join_series(result)
+
+
+def get_files(directory_path = './'):
+    return [f for f in listdir(directory_path) if isfile(join(directory_path, f))]
