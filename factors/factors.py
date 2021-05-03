@@ -21,7 +21,7 @@ def nefin_factors(verbose=0):
 
     return risk_factors
 
-def nefin_single_factor(factor="Market"):
+def nefin_single_factor(factor="Market", freq=None):
     """
         factor: {'Market', 'HML', 'SMB', 'WML', 'IML'}
 
@@ -30,14 +30,20 @@ def nefin_single_factor(factor="Market"):
     F = pd.read_excel(f"http://nefin.com.br/Risk%20Factors/{factor}_Factor.xls")
     index = concat_date([ F['year'], F['month'], F['day'] ])
     serie = pd.Series(list(F[ F.columns[-1] ]), index=index)
+    if freq is not None:
+        serie = retornos_acumulados_por_periodo(serie, to_freq=freq, calculate_current_freq_returns=False)
     return serie
 
-def nefin_risk_free():
+def nefin_risk_free(freq=None):
     nefin_Rf = pd.read_excel('http://nefin.com.br/Risk%20Factors/Risk_Free.xls')
     
     index = concat_date( [ nefin_Rf['year'], nefin_Rf['month'], nefin_Rf['day'] ] )
     values = nefin_Rf['Risk_free'].values
-    return pd.Series(values, index=index)
+
+    Rf = pd.Series(values, index=index)
+    if freq is not None:
+        Rf = retornos_acumulados_por_periodo(Rf, to_freq=freq, calculate_current_freq_returns=False)
+    return Rf
 
 
     
