@@ -17,14 +17,15 @@ def extract_characteristics(fias_characteristics = None, freq = 'M', window = No
     '''
     if fias_characteristics is None:
         fias_characteristics = get_characts(freq)
+    std = volatility_df(fias_characteristics['fis_acc'], method='std', window=window, verbose=verbose)
 
     result = {
         'variation'          : get_return_df(fias_characteristics['fis_acc'], window=window, verbose= verbose),
-        'sharpe'             : get_sharpe_ratio_df(fias_characteristics['fis_acc'], freq=freq, window=window, verbose=verbose),
+        'sharpe'             : get_sharpe_ratio_df(fias_characteristics['fis_acc'],  std, freq=freq, window=window, verbose=verbose),
         'treynor'            : get_treynor_ratio_df(fias_characteristics['fis_acc'], freq=freq, window=window, verbose=verbose),
         'lifetime'           : fias_characteristics['lifetime'],
         'information_ratio'  : information_ratio_df(fias_characteristics['fis_acc'] , freq=freq, window=window, verbose=verbose),
-        'standard_deviation' : volatility_df(fias_characteristics['fis_acc'], method='std', window=window, verbose=verbose),
+        'standard_deviation' : std,
         'downside_deviation' : volatility_df(fias_characteristics['fis_acc'], method='dsd', window=window, verbose=verbose),
         'equity'             : fias_characteristics['PL'],
         'captacao'           : fias_characteristics['capt'],
@@ -46,26 +47,27 @@ def get_characts(freq='M'):
 def capm_risk_premium(returns, Rf=None, freq = None, window=None):
     if Rf is None:
         Rf = nefin_risk_free(freq=freq)
-    Rp = (returns - nefin_risk_free()).dropna()
+    Rp = (returns - Rf).dropna()
     risk_premium = get_return(Rp, window=window)
     return risk_premium
 
 '''
     SHARPE
 '''
-def get_sharpe_ratio(returns:pd.Series, Rf=None, freq=None, window=None):
+def get_sharpe_ratio(returns:pd.Series, vol = None, Rf=None, freq=None, window=None):
+    if vol is None:
+        vol = volatility(returns,window=window)
     risk_premium = capm_risk_premium(returns, Rf=Rf, freq=freq, window=window)
-    vol = volatility(returns,window=window)
     sharpe = ( risk_premium / vol ).dropna()
     return sharpe
 
-def get_sharpe_ratio_df(returns:pd.DataFrame, freq=None, window=None, verbose=0):
+def get_sharpe_ratio_df(returns:pd.DataFrame, standard_deviations = None, freq=None, window=None, verbose=0):
     result = pd.DataFrame(columns = returns.columns, index = returns.index)
     Rf = nefin_risk_free(freq=freq)
     for i in range(returns.shape[1]):
         portfolio = returns.columns[i]
         pad.verbose(f'{i}. Índice de Sharpe --- frequência {freq} --- janela {window} --- Faltam {returns.shape[1]-i}', level=5, verbose=verbose)
-        result[portfolio] = get_sharpe_ratio(returns[portfolio], Rf=Rf, freq=freq, window=window)
+        result[portfolio] = get_sharpe_ratio(returns[portfolio], standard_deviations[portfolio], Rf=Rf, freq=freq, window=window)
     return result.dropna(how='all')
 
 '''

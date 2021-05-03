@@ -380,7 +380,10 @@ def cumulative_return(retornos, return_type = pd.Series):
         if not (r == None or pd.isna(r)):
             capital = capital*(1+r)
         acumulado += [capital-1]
-        
+    
+    if acumulado == []:
+        acumulado = [None]
+
     if return_type == pd.Series:
         if type(retornos) == pd.Series:
             acumulado = pd.Series(acumulado, index=retornos.index)
