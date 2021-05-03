@@ -62,12 +62,15 @@ def get_sharpe_ratio(returns:pd.Series, vol = None, Rf=None, freq=None, window=N
     return sharpe
 
 def get_sharpe_ratio_df(returns:pd.DataFrame, standard_deviations = None, freq=None, window=None, verbose=0):
+    pad.verbose('- Sharpe-ratio -', level=2, verbose=verbose)
     result = pd.DataFrame(columns = returns.columns, index = returns.index)
     Rf = nefin_risk_free(freq=freq)
     for i in range(returns.shape[1]):
         portfolio = returns.columns[i]
         pad.verbose(f'{i}. Índice de Sharpe --- frequência {freq} --- janela {window} --- Faltam {returns.shape[1]-i}', level=5, verbose=verbose)
         result[portfolio] = get_sharpe_ratio(returns[portfolio], standard_deviations[portfolio], Rf=Rf, freq=freq, window=window)
+
+    pad.verbose('line', level=2, verbose=verbose)
     return result.dropna(how='all')
 
 '''
@@ -81,6 +84,7 @@ def get_treynor_ratio(returns:pd.Series, betas:pd.Series, Rf:pd.Series=None, fre
 
 
 def get_treynor_ratio_df(returns:pd.DataFrame, freq=None, window=None, verbose=0):
+    pad.verbose('- Treynor-ratio -', level=2, verbose=verbose)
     result = pd.DataFrame(columns = returns.columns, index = returns.index)
     Rf = nefin_risk_free(freq=freq)
     betas = get_betas(window, freq, verbose=verbose)
@@ -88,6 +92,8 @@ def get_treynor_ratio_df(returns:pd.DataFrame, freq=None, window=None, verbose=0
         portfolio = returns.columns[i]
         pad.verbose(f'{i}. Índice de Treynor --- frequência {freq} --- janela {window} --- Faltam {returns.shape[1]-i}', level=5, verbose=verbose)
         result[portfolio] = get_treynor_ratio(returns[portfolio], betas[portfolio], Rf=Rf, freq=freq, window=window)
+
+    pad.verbose('line', level=2, verbose=verbose)
     return result.dropna(how='all')
 
 def get_betas(window, freq, verbose=0):
@@ -106,11 +112,14 @@ def get_betas(window, freq, verbose=0):
 '''
  
 def volatility_df(returns:pd.DataFrame, method="std", window=None, verbose=0):
+    pad.verbose(f'- Volatility: {method} -', level=2, verbose=verbose)
     result = pd.DataFrame(columns = returns.columns, index = returns.index)
     for i in range(returns.shape[1]):
         portfolio = returns.columns[i]
         pad.verbose(f'{i}. Volatilidade --- método {method} --- janela {window} --- Faltam {returns.shape[1]-i}', level=5, verbose=verbose)
         result[portfolio] = volatility(returns[portfolio], method=method, window=window)
+
+    pad.verbose('line', level=2, verbose=verbose)
     return result.dropna(how='all')
 
 def volatility(returns:pd.Series, method="std", window=None):
@@ -159,12 +168,15 @@ def downside_deviation(returns):
     INFORMATION RATIO
 '''
 def information_ratio_df(returns:pd.DataFrame, freq=None, window=None, verbose=0):
+    pad.verbose('- Information-ratio -', level=2, verbose=verbose)
     result = pd.DataFrame(columns = returns.columns, index = returns.index)
     mkt_returns = nefin_single_factor(factor="Market", freq=freq)
     for i in range(returns.shape[1]):
         portfolio = returns.columns[i]
         pad.verbose(f'{i}. Information-Ratio --- janela {window} --- Faltam {returns.shape[1]-i}', level=5, verbose=verbose)
         result[portfolio] = information_ratio(returns[portfolio], mkt_returns, window=window)
+    
+    pad.verbose('line', level=2, verbose=verbose)
     return result.dropna(how='all')
 
 def information_ratio(returns:pd.Series, mkt_returns=None, window=None):
@@ -191,11 +203,14 @@ def get_return(retornos, window=None, return_type = pd.Series):
     return retornos_acc
 
 def get_return_df(returns:pd.DataFrame, window=None, verbose=0):
+    pad.verbose('- Retornos Acumulados -', level=2, verbose=verbose)
     result = pd.DataFrame(columns = returns.columns, index = returns.index)
     for i in range(returns.shape[1]):
         portfolio = returns.columns[i]
         pad.verbose(f'{i}. Retorno acumulado --- janela {window} --- Faltam {returns.shape[1]-i}', level=5, verbose=verbose)
         result[portfolio] = get_return(returns[portfolio], window=window)
+
+    pad.verbose('line', level=2, verbose=verbose)
     return result.dropna(how='all')
 
 
