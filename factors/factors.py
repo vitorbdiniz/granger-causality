@@ -31,7 +31,7 @@ def nefin_single_factor(factor="Market", freq=None):
     index = concat_date([ F['year'], F['month'], F['day'] ])
     serie = pd.Series(list(F[ F.columns[-1] ]), index=index)
     if freq is not None:
-        serie = retornos_acumulados_por_periodo(serie, to_freq=freq, calculate_current_freq_returns=False)
+        serie = util.retornos_acumulados_por_periodo(serie, to_freq=freq, calculate_current_freq_returns=False)
     return serie
 
 def nefin_risk_free(freq=None):
@@ -42,7 +42,7 @@ def nefin_risk_free(freq=None):
 
     Rf = pd.Series(values, index=index)
     if freq is not None:
-        Rf = retornos_acumulados_por_periodo(Rf, to_freq=freq, calculate_current_freq_returns=False)
+        Rf = util.retornos_acumulados_por_periodo(Rf, to_freq=freq, calculate_current_freq_returns=False)
     return Rf
 
 

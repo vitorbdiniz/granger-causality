@@ -21,7 +21,7 @@ def extract_characteristics(fias_characteristics = None, freq = 'M', window = No
     result = {
         'variation'          : get_return_df(fias_characteristics['fis_acc'], window=window, verbose= verbose),
         'sharpe'             : get_sharpe_ratio_df(fias_characteristics['fis_acc'], freq=freq, window=window, verbose=verbose),
-        'treynor'            : get_treynor_ratio_df(fias_characteristics['fis_acc'], alphas, freq=freq, window=window, verbose=verbose),
+        'treynor'            : get_treynor_ratio_df(fias_characteristics['fis_acc'], freq=freq, window=window, verbose=verbose),
         'lifetime'           : fias_characteristics['lifetime'],
         'information_ratio'  : information_ratio_df(fias_characteristics['fis_acc'] , freq=freq, window=window, verbose=verbose),
         'standard_deviation' : volatility_df(fias_characteristics['fis_acc'], method='std', window=window, verbose=verbose),
@@ -39,6 +39,10 @@ def get_characts(freq='M'):
     characteristics = {n : util.df_datetimeindex(pd.read_csv(f'./data/economatica/{freq_dic[freq]}/{n}_economatica_{freq_dic[freq]}.csv', index_col=0)) for n in names}
     return characteristics
 
+'''
+    PRÊMIO PELO RISCO DE MERCADO
+'''
+
 def capm_risk_premium(returns, Rf=None, freq = None, window=None):
     if Rf is None:
         Rf = nefin_risk_free(freq=freq)
@@ -55,10 +59,10 @@ def get_sharpe_ratio(returns:pd.Series, Rf=None, freq=None, window=None):
     sharpe = ( risk_premium / vol ).dropna()
     return sharpe
 
-def get_sharpe_ratio_df(returns:pd.DataFrame, freq=freq, window=None, verbose=0):
+def get_sharpe_ratio_df(returns:pd.DataFrame, freq=None, window=None, verbose=0):
     result = pd.DataFrame(columns = returns.columns, index = returns.index)
     Rf = nefin_risk_free(freq=freq)
-    for i in returns.shape[1]:
+    for i in range(returns.shape[1]):
         portfolio = returns.columns[i]
         pad.verbose(f'{i}. Índice de Sharpe --- frequência {freq} --- janela {window} --- Faltam {returns.shape[1]-i}', level=5, verbose=verbose)
         result[portfolio] = get_sharpe_ratio(returns[portfolio], Rf=Rf, freq=freq, window=window)
@@ -77,14 +81,15 @@ def get_treynor_ratio(returns:pd.Series, betas:pd.Series, Rf:pd.Series=None, fre
 def get_treynor_ratio_df(returns:pd.DataFrame, freq=None, window=None, verbose=0):
     result = pd.DataFrame(columns = returns.columns, index = returns.index)
     Rf = nefin_risk_free(freq=freq)
-    betas = get_betas(window, freq)
-    for i in returns.shape[1]:
+    betas = get_betas(window, freq, verbose=verbose)
+    for i in range(returns.shape[1]):
         portfolio = returns.columns[i]
         pad.verbose(f'{i}. Índice de Treynor --- frequência {freq} --- janela {window} --- Faltam {returns.shape[1]-i}', level=5, verbose=verbose)
         result[portfolio] = get_treynor_ratio(returns[portfolio], betas[portfolio], Rf=Rf, freq=freq, window=window)
     return result.dropna(how='all')
 
-def get_betas(window, freq):
+def get_betas(window, freq, verbose=0):
+    pad.verbose('Buscando betas de mercado', level=4, verbose=verbose)
     freq_dict = {'D' : 'day', 'M' : 'month', 'Q' : 'quarter', 'Y' : 'year' }
     window = f'{window}m' if window is not None else 'all_period'
     path = f'./data/alphas/{freq_dict[freq]}/{window}/'
@@ -100,9 +105,9 @@ def get_betas(window, freq):
  
 def volatility_df(returns:pd.DataFrame, method="std", window=None, verbose=0):
     result = pd.DataFrame(columns = returns.columns, index = returns.index)
-    for i in returns.shape[1]:
+    for i in range(returns.shape[1]):
         portfolio = returns.columns[i]
-        pad.verbose(f'{i}. Volatilidade --- método {method} --- frequência {freq} --- janela {window} --- Faltam {returns.shape[1]-i}', level=5, verbose=verbose)
+        pad.verbose(f'{i}. Volatilidade --- método {method} --- janela {window} --- Faltam {returns.shape[1]-i}', level=5, verbose=verbose)
         result[portfolio] = volatility(returns[portfolio], method=method, window=window)
     return result.dropna(how='all')
 
@@ -138,11 +143,14 @@ def cumulative_volatility(returns, method="std"):
     return vol
 
 def downside_deviation(returns):
-    avg = st.mean(returns.values)
-    down_values = returns[returns < avg]
-    if len(down_values) < 2:
-        return None
-    return st.stdev(down_values, xbar=avg)
+    returns = returns.dropna()
+    result = None
+    if len(returns) >= 2:
+        avg = st.mean(returns)
+        down_values = returns[returns < avg]
+        if len(down_values) >= 2:
+            result = st.stdev(down_values, xbar=avg)
+    return result
 
 
 '''
@@ -150,15 +158,15 @@ def downside_deviation(returns):
 '''
 def information_ratio_df(returns:pd.DataFrame, freq=None, window=None, verbose=0):
     result = pd.DataFrame(columns = returns.columns, index = returns.index)
-    MKT = nefin_single_factor(factor="Market", freq=freq)
-    for i in returns.shape[1]:
+    mkt_returns = nefin_single_factor(factor="Market", freq=freq)
+    for i in range(returns.shape[1]):
         portfolio = returns.columns[i]
         pad.verbose(f'{i}. Information-Ratio --- janela {window} --- Faltam {returns.shape[1]-i}', level=5, verbose=verbose)
-        result[portfolio] = information_ratio(returns[portfolio], MKT, window=window)
+        result[portfolio] = information_ratio(returns[portfolio], mkt_returns, window=window)
     return result.dropna(how='all')
 
 def information_ratio(returns:pd.Series, mkt_returns=None, window=None):
-    difference = (returns - MKT).dropna()
+    difference = (returns - mkt_returns).dropna()
     premium = get_return(difference, window=window)
     tracking_error = volatility( difference, method='std', window=window )
     IR = premium / tracking_error
@@ -181,7 +189,8 @@ def get_return(retornos, window=None, return_type = pd.Series):
     return retornos_acc
 
 def get_return_df(returns:pd.DataFrame, window=None, verbose=0):
-    for i in returns.shape[1]:
+    result = pd.DataFrame(columns = returns.columns, index = returns.index)
+    for i in range(returns.shape[1]):
         portfolio = returns.columns[i]
         pad.verbose(f'{i}. Retorno acumulado --- janela {window} --- Faltam {returns.shape[1]-i}', level=5, verbose=verbose)
         result[portfolio] = get_return(returns[portfolio], window=window)

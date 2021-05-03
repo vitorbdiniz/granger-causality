@@ -373,6 +373,7 @@ def cumulative_return(retornos, return_type = pd.Series):
         retornos: {list, pandas.Series}
         return_type: {pandas.Series, list}
     '''
+    retornos = retornos.dropna() if type(retornos) == pd.Series else [x for x in retornos if x is not None]
     capital = 1
     acumulado = []
     for r in retornos:
@@ -386,6 +387,9 @@ def cumulative_return(retornos, return_type = pd.Series):
         else:
             acumulado = pd.Series(acumulado, index=range(len(retornos)))
     return acumulado
+
+
+
 
 def avg_return(retornos):
 
@@ -423,6 +427,9 @@ def retornos_acumulados_por_periodo(retornos:pd.Series, to_freq='M', calculate_c
 
 def retornos_acumulados_por_periodo_df(retornos:pd.DataFrame, to_freq='M', calculate_current_freq_returns=False):
     return pd.DataFrame({col : retornos_acumulados_por_periodo(retornos[col], to_freq, calculate_current_freq_returns) for col in retornos})
+
+
+
 """
 
     OUTROS CÁLCULOS

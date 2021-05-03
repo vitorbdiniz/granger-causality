@@ -55,14 +55,14 @@ def alpha_routine(fis, fatores, period = 'day', windows = [None, 12,24, 36], ver
 def characteristics_routine(freqs = ['M', 'Q'], windows = [None, 12, 24, 36], verbose=0, persist=False):
     result = dict()
     for freq in freqs:
-        fias_characteristics = get_characts_economatica(freq=freq)
+        fias_characteristics = get_characts_economatica(freq=freq, verbose=verbose)
         for window in windows:
-            characteristics = extract_characteristics(fias_characteristics, freq = freq, window = window, verbose=0)
+            characteristics = extract_characteristics(fias_characteristics, freq = freq, window = window, verbose=verbose)
             result[(window, freq)] = characteristics
             pad.persist_collection(characteristics, path=f'./data/caracteristicas/{period}/{window}/', extension=".csv", to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo Características")
     return result
 
-def get_characts_economatica(freq='M'):
+def get_characts_economatica(freq='M', verbose=0):
     pad.verbose('Buscando dados do Economática', level=4, verbose=verbose)
     freq_dic = {'M':'month', 'Q':'quarter', 'Y':'year', 'D':'day'}
     names = ['fis_acc', 'capt', 'capt_liq', 'cotistas', 'PL', 'resgate', 'resgate_IR', 'resgate_total', 'lifetime']
