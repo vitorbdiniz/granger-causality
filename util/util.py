@@ -43,6 +43,21 @@ def kill_duplicates(df, check_column="index"):
         PANDAS SERIES AND DATAFRAMES 
 
 """
+def reindex_timeseries(df, start=None, end=None, freq='M'):
+    if type(df) not in (pd.Series, pd.DataFrame):
+        raise AttributeError(f'Tipo de `df` deveria ser {pd.Series} ou {pd.DataFrame} e é {type(df)}')
+    if start is None:
+        start = df.index[0]
+    if end is None:
+        end = df.index[-1]
+
+    new_index = pd.date_range(start, end, freq=freq)
+    if type(df) is pd.DataFrame:
+        result = pd.DataFrame(df, index=new_index)
+    elif type(df) is pd.Series:
+        result = pd.Series(df, index=new_index)
+        
+    return result
 
 def df_datetimeindex(df):
     df.index = index_to_datetimeindex(df.index)
@@ -373,13 +388,14 @@ def cumulative_return(retornos, return_type = pd.Series):
         retornos: {list, pandas.Series}
         return_type: {pandas.Series, list}
     '''
-    retornos = retornos.dropna() if type(retornos) == pd.Series else [x for x in retornos if x is not None]
-
     capital = 1
     acumulado = []
     for r in retornos:
-        capital = capital*(1+r)
-        acumulado += [capital-1]      
+        if pd.isna(r):
+            acumulado += [None]
+        else:
+            capital = capital*(1+r)
+            acumulado += [capital-1]
 
     if return_type == pd.Series:
         if type(retornos) == pd.Series:
