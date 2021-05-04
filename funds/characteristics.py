@@ -21,18 +21,18 @@ def extract_characteristics(fias_characteristics = None, freq = 'M', window = No
 
     if fias_characteristics is None:
         fias_characteristics = get_characts(freq)
-    std = volatility_df(fias_characteristics['fis_acc'], method='std', window=window, verbose=verbose)
+    #std = volatility_df(fias_characteristics['fis_acc'], method='std', window=window, verbose=verbose)
 
     result = {
-        'variation'          : get_return_df(fias_characteristics['fis_acc'], window=w, verbose= verbose),
-        'sharpe'             : get_sharpe_ratio_df(fias_characteristics['fis_acc'],  std, freq=freq, window=w, verbose=verbose),
-        'treynor'            : get_treynor_ratio_df(fias_characteristics['fis_acc'], betas=window,freq=freq, window=w, verbose=verbose),
-        'lifetime'           : fias_characteristics['lifetime'],
-        'information_ratio'  : information_ratio_df(fias_characteristics['fis_acc'] , freq=freq, window=w, verbose=verbose),
-        'standard_deviation' : std,
-        'downside_deviation' : volatility_df(fias_characteristics['fis_acc'], method='dsd', window=w, verbose=verbose),
-        'equity'             : fias_characteristics['PL'],
-        'cotistas'           : fias_characteristics['cotistas'],
+        #'variation'          : get_return_df(fias_characteristics['fis_acc'], window=w, verbose= verbose),
+        #'sharpe'             : get_sharpe_ratio_df(fias_characteristics['fis_acc'],  std, freq=freq, window=w, verbose=verbose),
+        #'treynor'            : get_treynor_ratio_df(fias_characteristics['fis_acc'], betas=window,freq=freq, window=w, verbose=verbose),
+        #'lifetime'           : fias_characteristics['lifetime'],
+        #'information_ratio'  : information_ratio_df(fias_characteristics['fis_acc'] , freq=freq, window=w, verbose=verbose),
+        #'standard_deviation' : std,
+        #'downside_deviation' : volatility_df(fias_characteristics['fis_acc'], method='dsd', window=w, verbose=verbose),
+        #'equity'             : fias_characteristics['PL'],
+        #'cotistas'           : fias_characteristics['cotistas'],
         'captacao'           : trailing_sum_df(fias_characteristics['capt'], window =w, verbose=verbose),
         'captacao_liquida'   : trailing_sum_df(fias_characteristics['capt_liq'],window =w, verbose=verbose),
         'resgate'            : trailing_sum_df(fias_characteristics['resgate'], window =w, verbose=verbose),
@@ -45,6 +45,7 @@ def get_characts(freq='M'):
     freq_dic = {'M':'month', 'Q':'quarter', 'Y':'year', 'D':'day'}
     names = ['fis_acc', 'capt', 'capt_liq', 'cotistas', 'PL', 'resgate', 'resgate_IR', 'resgate_total', 'lifetime']
     characteristics = {n : util.df_datetimeindex(pd.read_csv(f'./data/economatica/{freq_dic[freq]}/{n}_economatica_{freq_dic[freq]}.csv', index_col=0)) for n in names}
+    characteristics = {name : util.reindex_timeseries(characteristics[name], freq=freq) for name in characteristics.keys()}
     return characteristics
 
 '''
@@ -225,13 +226,15 @@ def get_return_df(returns:pd.DataFrame, window=None, verbose=0):
     Trailing sum
 '''
 
-def trailing_sum_df(serie, window = None):
+def trailing_sum(serie, window = None):
     serie = serie.dropna()
     if len(serie) > 0:
         if window is None:
-            result = [serie[0 : i].sum() for i in range(0, serie.shape[0])]
+            s = [ serie[0 : i].sum() for i in range(1, serie.shape[0]+1)]
+            window = 1
         else:
-            result = [serie[i-window : i].sum() for i in range(window, serie.shape[0])]
+            s = [serie[i-window : i].sum() for i in range(window, serie.shape[0]+1)]
+        result = pd.Series(s, index = serie.index[(window-1): serie.shape[0]])
     else:
         result = pd.Series([], index=serie.index)
     return result
@@ -242,7 +245,8 @@ def trailing_sum_df(data, window = None, verbose=0):
     for i in range(data.shape[1]):
         portfolio = data.columns[i]
         pad.verbose(f'{i}. Trailing sum --- janela {window} --- Faltam {data.shape[1]-i}', level=5, verbose=verbose)
-        result[portfolio] = get_return(data[portfolio], window=window)
+        s = trailing_sum(data[portfolio], window=window)
+        result[portfolio] = s
     pad.verbose('line', level=2, verbose=verbose)
     return result.dropna(how='all')
 
