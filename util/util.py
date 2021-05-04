@@ -659,9 +659,14 @@ def rescale(serie):
     return pd.Series(result, index=index)
 
 
-def preprocess_serie(serie):
-    result = rescale(serie)
-    result = outlier_treatment(result)
+def preprocess_serie(serie, dropna=False):
+    if dropna:
+        serie = serie.dropna()
+    if len(serie) > 0:
+        result = rescale(serie)
+        result = outlier_treatment(result)
+    else:
+        result = serie.copy()
     return result
 
 def preprocess_series(series_list):
