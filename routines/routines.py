@@ -1,5 +1,5 @@
 import pandas as pd
-
+import datetime as dt
 from factors.factors import get_fatores
 from funds.preprocess_fias import preprocess_fis
 from funds.alpha import jensens_alpha
@@ -9,29 +9,48 @@ from causality.granger import granger_causality, granger_scores
 from util import util, padding as pad
 
 
-def granger_routine(characteristics=None, alphas=None, freqs = ['M', 'Q'], windows = [None, 12, 24, 36], verbose=0, persist=False):    
+def granger_routine(freqs = ['M', 'Q'], windows = [None, 12, 24, 36], verbose=0, persist=False):    
     freq_dic = {'M':'month', 'Q':'quarter', 'Y':'year', 'D':'day'}
+    aprouved_funds = apply_funds_filter(years=5)
     results = dict()
     for freq in freqs:
         for window in windows:
-            if characteristics is None:
-                characteristics = get_characteristics(freq, window)
-            if alphas is None:
-                alphas = get_alphas(window, freq, verbose=verbose)
-            gtests = granger_causality(characteristics, alphas, maxlag=15, statistical_test='all', verbose=verbose)
-            pad.persist_collection(gtests, path=f'./data/granger_tests/{freq_dic[freq]}/{window}/', to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo testes de Granger") 
+            for separate_lags in [True, False]:
+                for binary in [True, False]:
+                    characteristics = get_characteristics(freq, window, verbose=verbose)
+                    alphas = get_alphas(window, freq, verbose=verbose)
 
-            #granger scores
-            scores = granger_scores(gtests)
-            pad.persist_collection({f'scores_{freq_dic[freq]}_{window}m' : scores}, path=f'./data/granger_tests/scores/', to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo scores do testes de Granger")
-            results[(freq, window)] = scores
+                    gtests = granger_causality(characteristics, alphas, fund_filter = aprouved_funds, maxlag=15, statistical_test='all', separate_lags=separate_lags, binary=binary, verbose=verbose)
+                    
+                    lags_dir = 'separated_lags' if separate_lags else 'not_separated_lags'
+                    binary_dir = 'binary' if binary else 'continuous'
+                    if type(gtests) is dict:
+                        pad.persist_collection(gtests, path=f'./data/granger_tests/{freq_dic[freq]}/{window}/{lags_dir}/{binary_dir}/', to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo testes de Granger") 
+                    else:
+                        pad.persist_collection({'granger_results':gtests}, path=f'./data/granger_tests/{freq_dic[freq]}/{window}/{lags}/{binary_dir}/', to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo testes de Granger")
+
+                    #granger scores
+                    scores = granger_scores(gtests)
+                    pad.persist_collection({f'scores' : scores}, path=f'./data/granger_tests/{freq_dic[freq]}/{window}/{lags}/scores/', to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo scores do testes de Granger")
+                    results[(freq, window)] = scores
     return results
 
+def apply_funds_filter(years=5):
+    lifetime = util.df_datetimeindex( pd.read_csv('./data/caracteristicas/month/None/lifetime.csv',index_col=0) )
+    lifetime = lifetime.iloc[0:lifetime.index.get_loc(dt.datetime(2020,12,31)) + 1]
 
-def get_characteristics(freq, window):
+    life_gt_year = lifetime[lifetime > 365*years].dropna(how='all', axis='columns')
+    return set(life_gt_year.columns)
+
+
+def get_characteristics(freq, window, verbose=0):
+    pad.verbose('Buscando características', level=4, verbose=verbose)
     freq_dic = {'M':'month', 'Q':'quarter', 'Y':'year', 'D':'day'}
+
     path = f'./data/caracteristicas/{freq_dic[freq]}/{window}/'
-    characteristics = {file.split('.')[0] : util.df_datetimeindex( pd.read_csv(path+file, index_col=0) ) for file in util.get_files(path)}
+    files = ['variation','sharpe','treynor','lifetime','information_ratio','standard_deviation','downside_deviation','equity','cotistas','captacao','captacao_liquida','resgate','resgate_IR','resgate_total']
+
+    characteristics = {file.split('.')[0] : util.df_datetimeindex( pd.read_csv(path+file+'.csv', index_col=0) ) for file in files}
     return characteristics
 
 def alpha_routine(fis, fatores, period = 'day', windows = [None, 12,24, 36], verbose=0, persist=False):
@@ -52,6 +71,8 @@ def characteristics_routine(freqs = ['M', 'Q'], windows = [None, 12, 24, 36], ve
     for freq in freqs:
         fias_characteristics = get_characts_economatica(freq=freq, verbose=verbose)
         for window in windows:
+            if freq == 'Q' and window == 12:
+                continue
             characteristics = extract_characteristics(fias_characteristics, freq = freq, window = window, verbose=verbose)
             result[(window, freq)] = characteristics
             pad.persist_collection(characteristics, path=f'./data/caracteristicas/{freq_dic[freq]}/{window}/', extension=".csv", to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo Características")
@@ -71,5 +92,7 @@ def get_alphas(window, freq, verbose=0):
     window = f'{window}m' if window is not None else 'all_period'
     path = f'./data/alphas/{freq_dict[freq]}/{window}/'
     alphas = {file.split('.')[0] : util.df_datetimeindex( pd.read_csv(path+file, index_col=0) ) for file in util.get_files(path)}
+    alphas = {name : util.reindex_timeseries(alphas[name], freq=freq) for name in alphas.keys()}
+    
     return alphas
 
