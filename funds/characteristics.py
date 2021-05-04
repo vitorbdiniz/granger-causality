@@ -21,18 +21,18 @@ def extract_characteristics(fias_characteristics = None, freq = 'M', window = No
 
     if fias_characteristics is None:
         fias_characteristics = get_characts(freq)
-    #std = volatility_df(fias_characteristics['fis_acc'], method='std', window=window, verbose=verbose)
+    std = volatility_df(fias_characteristics['fis_acc'], method='std', window=window, verbose=verbose)
 
     result = {
-        #'variation'          : get_return_df(fias_characteristics['fis_acc'], window=w, verbose= verbose),
-        #'sharpe'             : get_sharpe_ratio_df(fias_characteristics['fis_acc'],  std, freq=freq, window=w, verbose=verbose),
-        #'treynor'            : get_treynor_ratio_df(fias_characteristics['fis_acc'], betas=window,freq=freq, window=w, verbose=verbose),
-        #'lifetime'           : fias_characteristics['lifetime'],
-        #'information_ratio'  : information_ratio_df(fias_characteristics['fis_acc'] , freq=freq, window=w, verbose=verbose),
-        #'standard_deviation' : std,
-        #'downside_deviation' : volatility_df(fias_characteristics['fis_acc'], method='dsd', window=w, verbose=verbose),
-        #'equity'             : fias_characteristics['PL'],
-        #'cotistas'           : fias_characteristics['cotistas'],
+        'variation'          : get_return_df(fias_characteristics['fis_acc'], window=w, verbose= verbose),
+        'sharpe'             : get_sharpe_ratio_df(fias_characteristics['fis_acc'],  std, freq=freq, window=w, verbose=verbose),
+        'treynor'            : get_treynor_ratio_df(fias_characteristics['fis_acc'], betas=window,freq=freq, window=w, verbose=verbose),
+        'lifetime'           : fias_characteristics['lifetime'],
+        'information_ratio'  : information_ratio_df(fias_characteristics['fis_acc'] , freq=freq, window=w, verbose=verbose),
+        'standard_deviation' : std,
+        'downside_deviation' : volatility_df(fias_characteristics['fis_acc'], method='dsd', window=w, verbose=verbose),
+        'equity'             : fias_characteristics['PL'],
+        'cotistas'           : fias_characteristics['cotistas'],
         'captacao'           : trailing_sum_df(fias_characteristics['capt'], window =w, verbose=verbose),
         'captacao_liquida'   : trailing_sum_df(fias_characteristics['capt_liq'],window =w, verbose=verbose),
         'resgate'            : trailing_sum_df(fias_characteristics['resgate'], window =w, verbose=verbose),
