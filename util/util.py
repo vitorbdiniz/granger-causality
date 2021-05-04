@@ -46,6 +46,8 @@ def kill_duplicates(df, check_column="index"):
 def reindex_timeseries(df, start=None, end=None, freq='M'):
     if type(df) not in (pd.Series, pd.DataFrame):
         raise AttributeError(f'Tipo de `df` deveria ser {pd.Series} ou {pd.DataFrame} e é {type(df)}')
+    if df.shape[0] == 0:
+        return df.copy()
     if start is None:
         start = df.index[0]
     if end is None:
