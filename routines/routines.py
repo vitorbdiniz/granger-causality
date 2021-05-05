@@ -15,8 +15,10 @@ def granger_routine(freqs = ['M', 'Q'], windows = [None, 12, 24, 36], verbose=0,
     results = dict()
     for freq in freqs:
         for window in windows:
-            for separate_lags in [True, False]:
-                for binary in [True, False]:
+            for separate_lags in [True,False]: 
+                for binary in [True,False]: 
+                    if freq == 'Q' and window == 12:
+                        continue
                     characteristics = get_characteristics(freq, window, verbose=verbose)
                     alphas = get_alphas(window, freq, verbose=verbose)
 
@@ -27,11 +29,11 @@ def granger_routine(freqs = ['M', 'Q'], windows = [None, 12, 24, 36], verbose=0,
                     if type(gtests) is dict:
                         pad.persist_collection(gtests, path=f'./data/granger_tests/{freq_dic[freq]}/{window}/{lags_dir}/{binary_dir}/', to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo testes de Granger") 
                     else:
-                        pad.persist_collection({'granger_results':gtests}, path=f'./data/granger_tests/{freq_dic[freq]}/{window}/{lags}/{binary_dir}/', to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo testes de Granger")
+                        pad.persist_collection({'granger_results':gtests}, path=f'./data/granger_tests/{freq_dic[freq]}/{window}/{lags_dir}/{binary_dir}/', to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo testes de Granger")
 
                     #granger scores
-                    scores = granger_scores(gtests)
-                    pad.persist_collection({f'scores' : scores}, path=f'./data/granger_tests/{freq_dic[freq]}/{window}/{lags}/scores/', to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo scores do testes de Granger")
+                    scores = granger_scores(gtests, )
+                    pad.persist_collection({f'scores' : scores}, path=f'./data/granger_tests/{freq_dic[freq]}/{window}/{lags_dir}/{binary_dir}/scores/', to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo scores do testes de Granger")
                     results[(freq, window)] = scores
     return results
 
@@ -44,7 +46,7 @@ def apply_funds_filter(years=5):
 
 
 def get_characteristics(freq, window, verbose=0):
-    pad.verbose('Buscando características', level=4, verbose=verbose)
+    pad.verbose(f'Buscando características - freq: {freq} - janela: {window}', level=4, verbose=verbose)
     freq_dic = {'M':'month', 'Q':'quarter', 'Y':'year', 'D':'day'}
 
     path = f'./data/caracteristicas/{freq_dic[freq]}/{window}/'
@@ -86,7 +88,7 @@ def get_characts_economatica(freq='M', verbose=0):
     return characteristics
 
 def get_alphas(window, freq, verbose=0):
-    pad.verbose('Buscando alfas', level=4, verbose=verbose)
+    pad.verbose(f'Buscando alfas - freq: {freq} - janela: {window}', level=4, verbose=verbose)
 
     freq_dict = {'D' : 'day', 'M' : 'month', 'Q' : 'quarter', 'Y' : 'year' }
     window = f'{window}m' if window is not None else 'all_period'

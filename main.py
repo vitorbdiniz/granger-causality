@@ -14,19 +14,15 @@ def main(routine='alpha', period = 'month'):
     verbose = 5
     persist = True
 
-    if period == 'day' or period == 'month':
-        windows = [12, 24, 36, 48, 60, None]
-    elif period == 'quarter':
-        windows = [24, 36, 48, 60, None]
-    elif period == 'year':
-        windows = [48,60,None]
-
     if routine=='alpha':
         fis, fatores = prepare_alpha_routine(period, verbose)
         routines.alpha_routine(fis, fatores, period=period, windows=windows, verbose=verbose, persist=persist)
     
     elif routine == 'characteristics':
-        routines.characteristics_routine(freqs = ['M','Q'], windows = [24, 36, 48, 60, None], verbose=verbose, persist=persist)
+        routines.characteristics_routine(freqs = ['M','Q'], windows = [12, 24, 36, 48, 60, None], verbose=verbose, persist=persist)
+
+    elif routine == 'granger':
+        routines.granger_routine(freqs = ['Q'], windows = [12, 24, 36, 48, 60, None], verbose=verbose, persist=persist)
 
     else:
         fis = preprocess_fis(pd.read_csv("./data/cotas_fias.csv"), verbose=verbose)
@@ -46,7 +42,6 @@ def prepare_alpha_routine(period, verbose):
 
 
 if __name__ == "__main__":
-    #for period in ['quarter', 'year']:
-        main(routine='characteristics', period='quarter')
+    main(routine='granger')
 
 

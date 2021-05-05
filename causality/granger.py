@@ -39,14 +39,15 @@ def granger_causality(characteristics:dict, alfas:dict, fund_filter = None, maxl
         j=0
         for caracteristica in characteristics.keys():
             j+=1
-            pad.verbose(f'{i}.{j}. Testes de Granger --- fundo {fundo} --- {caracteristica} --- faltam {len(alfas.keys()) - i} fundos --- faltam {len(characteristics.keys()) - j} caracteristicas', level=5, verbose=verbose)
-            if fundo not in funds_in_characts[caracteristica]:
+            pad.verbose(f'{i}.{j}. Testes de Granger --- separate_lags: {separate_lags} --- binary: {binary} --- faltam {len(alfas.keys()) - i} fundos', level=5, verbose=verbose)
+            if fundo not in funds_in_characts[caracteristica]:                
                 continue
 
             selected_characteristic = util.preprocess_serie(characteristics[caracteristica][fundo], dropna=True)
             selected_characteristic = stationarity_check(selected_characteristic, max_iter=5, verbose=0)
 
-            if util.is_none(selected_characteristic):
+
+            if util.is_none(selected_characteristic):                
                 continue
             data = util.join_series(series_list=[alfa, selected_characteristic]).values
 
@@ -79,14 +80,14 @@ def granger_causality_test(data, maxlag=10, statistical_test='all', scores=True,
 
     result = pd.DataFrame({lag : pd.Series({stat:gTests[lag][0][stat][1] for stat in statistical_tests}) for lag in gTests.keys()}, index = statistical_tests)
     if scores:
-        result = stats_scores_per_lag(result, binary=False) if separate_lags else stats_scores(result, binary=False)
+        result = stats_scores_per_lag(result, binary=binary) if separate_lags else stats_scores(result, binary=binary)
     return result
 
 def stats_scores(granger_df, binary=False):
     df = granger_df.copy() <= 0.05
     result = 0
     if binary:
-        result = 1 if (granger_df <= 0.05).any() else 0
+        result = 1 if (granger_df <= 0.05).any(1).any() else 0
     else:
         for i in df.index:
             if df.loc[i].any():
@@ -169,7 +170,8 @@ def get_difference(serie):
 
 """
 
-def granger_scores(granger_results):
+def granger_scores(granger_results, verbose=0):
+    pad.verbose('- Calculando Granger-Scores -', level=3, verbose=verbose)
     if type(granger_results) is dict:
         result = granger_scores_dict(granger_results)
     else:
