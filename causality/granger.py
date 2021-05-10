@@ -1,6 +1,16 @@
 import pandas as pd
 import numpy as np
 from statsmodels.tsa.stattools import grangercausalitytests, adfuller
+from statsmodels.tools.tools import Bunch, add_constant
+from statsmodels.tools.validation import (
+    array_like,
+    bool_like,
+    dict_like,
+    float_like,
+    int_like,
+    string_like,
+)
+
 from sklearn.preprocessing import MinMaxScaler
 
 from util import util, padding as pad
@@ -14,7 +24,7 @@ warnings.filterwarnings("ignore")
 
 """
 
-def granger_causality(characteristics:dict, alfas:dict, fund_filter = None, maxlag=15, statistical_test='params_ftest', separate_lags=True, binary=False,verbose=0):
+def granger_causality(characteristics:dict, alfas:dict, fund_filter = None, maxlag=36, statistical_test='params_ftest', separate_lags=True, binary=False,verbose=0):
     '''
         alfas: {dict}   ---     fundo:str -> alfa:pd.DataFrame -> resultados+estatísticas
         characteristics: {dict} --- caracteristica:str -> data:pd.DataFrame -> fundos
@@ -39,20 +49,26 @@ def granger_causality(characteristics:dict, alfas:dict, fund_filter = None, maxl
         j=0
         for caracteristica in characteristics.keys():
             j+=1
-            pad.verbose(f'{i}.{j}. Testes de Granger --- separate_lags: {separate_lags} --- binary: {binary} --- faltam {len(alfas.keys()) - i} fundos', level=5, verbose=verbose)
+            pad.verbose(f'{i}.{j}. Testes de Granger --- separate_lags: {separate_lags} --- binary: {binary} --- faltam {len(funds) - i} fundos', level=5, verbose=verbose)
             if fundo not in funds_in_characts[caracteristica]:                
                 continue
 
             selected_characteristic = util.preprocess_serie(characteristics[caracteristica][fundo], dropna=True)
             selected_characteristic = stationarity_check(selected_characteristic, max_iter=5, verbose=0)
 
-
             if util.is_none(selected_characteristic):                
                 continue
+
             data = util.join_series(series_list=[alfa, selected_characteristic]).values
 
             try:
-                granger_result = granger_causality_test(data, maxlag, statistical_test, scores=True, separate_lags=separate_lags, binary=binary)
+                addconst = int(bool_like(True, "addconst"))
+                if data.shape[0] <= 3 * maxlag + addconst:
+                    lag = int((data.shape[0] - addconst)/3)-1
+                    pad.verbose(f'---- Alterando maxlag para {lag}', level=4, verbose=verbose)
+                else:
+                    lag = maxlag
+                granger_result = granger_causality_test(data, lag, statistical_test, scores=True, separate_lags=separate_lags, binary=binary)
             except:
                 continue
 
@@ -187,14 +203,23 @@ def granger_scores_dict(granger_dic):
         granger_dic: dicionário com DataFrames resultantes de granger_tests
 
     """
+    granger_dic = kill_empty_df(granger_dic)
     result = pd.DataFrame(columns = list(granger_dic.values())[0].columns)
-
+    metric_counter = pd.Series(dtype=int)
     for granger_df in granger_dic.values():
         for metric in granger_df.index:
+            if metric in metric_counter.index:
+                metric_counter[metric] += 1
+            else:
+                metric_counter[metric] = 1
+
             if metric in result.index:
                 result.loc[metric] += granger_df.loc[metric]
             else:
                 result.loc[metric] = granger_df.loc[metric]                
-    result /= len(granger_dic.values())
+    
+    result = pd.DataFrame({lag : result[lag]/metric_counter for lag in result.columns})
     return result
         
+def kill_empty_df(dic):
+    return {key : dic[key] for key in dic.keys() if dic[key].shape[0] > 0}

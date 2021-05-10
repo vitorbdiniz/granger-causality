@@ -1,5 +1,6 @@
 import pandas as pd
 import datetime as dt
+
 from factors.factors import get_fatores
 from funds.preprocess_fias import preprocess_fis
 from funds.alpha import jensens_alpha
@@ -9,38 +10,36 @@ from causality.granger import granger_causality, granger_scores
 from util import util, padding as pad
 
 
-def granger_routine(freqs = ['M', 'Q'], windows = [None, 12, 24, 36], verbose=0, persist=False):    
+def granger_routine(freqs = ['M', 'Q'], windows = [None, 12, 24, 36], maxlags = 15, verbose=0, persist=False):    
     freq_dic = {'M':'month', 'Q':'quarter', 'Y':'year', 'D':'day'}
-    aprouved_funds = apply_funds_filter(years=5)
+    aprouved_funds = apply_funds_filter(years=1)
     results = dict()
     for freq in freqs:
         for window in windows:
-            for separate_lags in [True,False]: 
-                for binary in [True,False]: 
+            for separate_lags in [True]: 
+                for binary in [True]:
                     if freq == 'Q' and window == 12:
                         continue
+                    pad.verbose(f'- freq: {freq} - janela: {window} - separate_lags: {separate_lags} - binary: {binary} -', level=4, verbose=verbose)
                     characteristics = get_characteristics(freq, window, verbose=verbose)
                     alphas = get_alphas(window, freq, verbose=verbose)
-
-                    gtests = granger_causality(characteristics, alphas, fund_filter = aprouved_funds, maxlag=15, statistical_test='all', separate_lags=separate_lags, binary=binary, verbose=verbose)
+                    gtests = granger_causality(characteristics, alphas, fund_filter = aprouved_funds, maxlag=maxlags, statistical_test='all', separate_lags=separate_lags, binary=binary, verbose=verbose)
                     
                     lags_dir = 'separated_lags' if separate_lags else 'not_separated_lags'
                     binary_dir = 'binary' if binary else 'continuous'
                     if type(gtests) is dict:
-                        pad.persist_collection(gtests, path=f'./data/granger_tests/{freq_dic[freq]}/{window}/{lags_dir}/{binary_dir}/', to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo testes de Granger") 
+                        pad.persist_collection(gtests, path=f'./data/granger_tests/{freq_dic[freq]}/{window}/maxlags/{lags_dir}/{binary_dir}/', to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo testes de Granger") 
                     else:
-                        pad.persist_collection({'granger_results':gtests}, path=f'./data/granger_tests/{freq_dic[freq]}/{window}/{lags_dir}/{binary_dir}/', to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo testes de Granger")
-
+                        pad.persist_collection({'granger_results':gtests}, path=f'./data/granger_tests/{freq_dic[freq]}/{window}/maxlags/{lags_dir}/{binary_dir}/', to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo testes de Granger")
                     #granger scores
-                    scores = granger_scores(gtests, )
-                    pad.persist_collection({f'scores' : scores}, path=f'./data/granger_tests/{freq_dic[freq]}/{window}/{lags_dir}/{binary_dir}/scores/', to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo scores do testes de Granger")
-                    results[(freq, window)] = scores
-    return results
+                    scores = granger_scores(gtests)
+                    pad.persist_collection({f'scores' : scores}, path=f'./data/granger_tests/{freq_dic[freq]}/{window}/maxlags/{lags_dir}/{binary_dir}/scores/', to_persist=persist, _verbose=verbose, verbose_level=2, verbose_str="Persistindo scores do testes de Granger")
+                    #results[(freq, window)] = scores
+    return #results
 
 def apply_funds_filter(years=5):
     lifetime = util.df_datetimeindex( pd.read_csv('./data/caracteristicas/month/None/lifetime.csv',index_col=0) )
     lifetime = lifetime.iloc[0:lifetime.index.get_loc(dt.datetime(2020,12,31)) + 1]
-
     life_gt_year = lifetime[lifetime > 365*years].dropna(how='all', axis='columns')
     return set(life_gt_year.columns)
 

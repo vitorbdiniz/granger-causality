@@ -674,5 +674,6 @@ def preprocess_series(series_list):
     return join_series(result)
 
 
-def get_files(directory_path = './'):
-    return [f for f in listdir(directory_path) if isfile(join(directory_path, f))]
+def get_files(directory_path = './', except_files = []):
+    return [f for f in listdir(directory_path) if isfile(join(directory_path, f)) and f not in except_files]
+    

@@ -1,5 +1,6 @@
 import pandas as pd
 import datetime as dt
+from os import path
 
 from routines import routines
 from factors.factors import get_fatores
@@ -13,16 +14,16 @@ from util import util, padding as pad
 def main(routine='alpha', period = 'month'):
     verbose = 5
     persist = True
-
+    
     if routine=='alpha':
         fis, fatores = prepare_alpha_routine(period, verbose)
         routines.alpha_routine(fis, fatores, period=period, windows=windows, verbose=verbose, persist=persist)
     
     elif routine == 'characteristics':
-        routines.characteristics_routine(freqs = ['M','Q'], windows = [12, 24, 36, 48, 60, None], verbose=verbose, persist=persist)
+        routines.characteristics_routine(freqs = ['M'], windows = [12, 24, 36, 48, 60, None], verbose=verbose, persist=persist)
 
     elif routine == 'granger':
-        routines.granger_routine(freqs = ['Q'], windows = [12, 24, 36, 48, 60, None], verbose=verbose, persist=persist)
+        routines.granger_routine(freqs = ['M'], windows = [12, 24, 36, 48, 60, None], maxlags=100,verbose=verbose, persist=persist)
 
     else:
         fis = preprocess_fis(pd.read_csv("./data/cotas_fias.csv"), verbose=verbose)
